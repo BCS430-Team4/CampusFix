@@ -1,0 +1,21 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.5.4">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AspireUseCliBundle>true</AspireUseCliBundle>
+        <UserSecretsId>e69de92c-b4b8-4e36-a9fb-929ae6e63b94</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\CampusFix.Server\CampusFix.Server.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.5.4"/>
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.5.4" />
+        <PackageReference Include="CommunityToolkit.Aspire.Hosting.Minio" Version="13.5.0" />
+    </ItemGroup>
+</Project>

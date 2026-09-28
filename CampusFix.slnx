@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CampusFix.AppHost/CampusFix.AppHost.csproj" />
+  <Project Path="CampusFix.Server/CampusFix.Server.csproj" />
+</Solution>
