@@ -9,7 +9,7 @@ var minioUser = builder.AddParameter("minio-user", "admin");
 var minioPassword = builder.AddParameter("minio-password", "change-me-long-password", secret: true);
 
 var minio = builder.AddMinioContainer("minio")
-    .WithImage("pgsty/silo")       
+    .WithImage("pgsty/silo")
     .WithImageTag("latest")
     .WithEnvironment("MINIO_ROOT_USER", "admin")
     .WithEnvironment("MINIO_ROOT_PASSWORD", "password123")
