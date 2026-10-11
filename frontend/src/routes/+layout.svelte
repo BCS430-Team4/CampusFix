@@ -10,6 +10,10 @@
   let timer;
   const tabs = [['/', 'Dashboard'], ['/my-tickets', 'My tickets'], ['/map', 'Map']];
   let secondary = $derived(page.url.pathname === '/report' || page.url.pathname.startsWith('/tickets/'));
+  let technicianView = $derived(
+    page.url.pathname === '/technician' ||
+    page.url.pathname.startsWith('/technician/')
+  ); 
 
   function notify(text) {
     message = text;
@@ -36,8 +40,8 @@
 </script>
 
 <svelte:head><title>CampusFix</title></svelte:head>
-<div class="app">
-  {#if !secondary}
+<div class="app" class:technician-app={technicianView}>
+  {#if !secondary && !technicianView}
     <Topbar />
     <nav class="tabbar" aria-label="Main navigation">
       {#each tabs as [href, label]}
@@ -51,3 +55,8 @@
 </div>
 <div class="toast" class:show={Boolean(message)} role="status">{message}</div>
 
+<style>
+  :global(.app.technician-app) {
+    max-width: 1000px;
+  }
+</style>
