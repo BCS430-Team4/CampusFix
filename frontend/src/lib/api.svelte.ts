@@ -3,7 +3,30 @@ import { formatToday } from './shared.js';
 // Mock storage; replace with backend requests when the API is ready.
 const STORAGE_KEY = 'campusfix_mock_tickets_v1';
 
-const SEED_TICKETS = [
+export interface Ticket {
+  id: string;
+  title: string;
+  category: string;
+  building: string;
+  room: string;
+  description: string;
+  status: string;
+  priority: string;
+  technician: string;
+  asset: string;
+  created: string;
+  updated: string;
+  comments: Comment[];
+}
+
+export interface Comment {
+  author: string;
+  role: string;
+  when: string;
+  body: string;
+}
+
+const SEED_TICKETS: Ticket[] = [
   { id: 'CF-1042', title: 'Flickering lights in lab', category: 'Electrical', building: 'Lupton Hall', room: 'Room 204',
     description: 'The overhead lights near the back row flicker on and off every few minutes during class.',
     status: 'Open', priority: null, technician: null, asset: null, created: 'Sep 16, 2026', updated: 'Sep 16, 2026', comments: [] },
@@ -26,13 +49,13 @@ const SEED_TICKETS = [
     status: 'Resolved', priority: 'Medium', technician: 'J. Delgado', asset: 'Access Point — Colleran 2C', created: 'Sep 1, 2026', updated: 'Sep 4, 2026', comments: [] }
 ];
 
-function loadAll() {
+function loadAll(): Ticket[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return JSON.parse(raw) as Ticket[];
   } catch (e) {  }
   saveAll(SEED_TICKETS);
-  return JSON.parse(JSON.stringify(SEED_TICKETS));
+  return JSON.parse(JSON.stringify(SEED_TICKETS)) as Ticket[];
 }
 
 function saveAll(list) {
@@ -41,11 +64,11 @@ function saveAll(list) {
 
 export const CampusFixAPI = {
 
-  getTickets() {
+  getTickets(): Ticket[] {
     return loadAll();
   },
 
-  getTicket(id) {
+  getTicket(id: string): Ticket || null {
     return loadAll().find(t => t.id === id) || null;
   },
 
