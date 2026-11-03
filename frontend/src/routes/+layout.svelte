@@ -1,6 +1,11 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import Button from '$lib/components/Button.svelte'
+  import { onMount, setContext } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import Topbar from '$lib/components/Topbar.svelte';
+  import '../app.css';
 
   let { children } = $props();
   let message = $state('');
