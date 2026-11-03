@@ -1,9 +1,6 @@
-<script>
-  import { onMount, setContext } from 'svelte';
-  import { goto } from '$app/navigation';
-  import { page } from '$app/state';
-  import Topbar from '$lib/components/Topbar.svelte';
-  import '../app.css';
+<script lang="ts">
+	import favicon from '$lib/assets/favicon.svg';
+	import Button from '$lib/components/Button.svelte'
 
   let { children } = $props();
   let message = $state('');
@@ -39,21 +36,13 @@
   });
 </script>
 
-<svelte:head><title>CampusFix</title></svelte:head>
-<div class="app" class:technician-app={technicianView}>
-  {#if !secondary && !technicianView}
-    <Topbar />
-    <nav class="tabbar" aria-label="Main navigation">
-      {#each tabs as [href, label]}
-        <a class="tab" class:active={page.url.pathname === href} aria-current={page.url.pathname === href ? 'page' : undefined} {href}>{label}</a>
-      {/each}
-    </nav>
-  {/if}
-  {#key page.url.pathname + page.url.search}
-    {@render children()}
-  {/key}
-</div>
-<div class="toast" class:show={Boolean(message)} role="status">{message}</div>
+<svelte:head>
+	<link rel="icon" href={favicon} />
+</svelte:head>
+
+<Button/>
+
+{@render children()}
 
 <style>
   :global(.app.technician-app) {

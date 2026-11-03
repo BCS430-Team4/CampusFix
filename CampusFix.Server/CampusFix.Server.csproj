@@ -4,16 +4,24 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+
+        <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
+        <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)\..</OpenApiDocumentsDirectory>
+        <OpenApiGenerateDocumentsOptions>--file-name openapi</OpenApiGenerateDocumentsOptions>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0"/>
-        <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.8.0"/>
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+        <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.12">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
+        <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.10.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
     </ItemGroup>
 </Project>
