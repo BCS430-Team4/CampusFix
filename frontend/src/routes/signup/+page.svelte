@@ -1,21 +1,14 @@
 <script lang="ts">
-  let password = $state('');
-  let confirmPassword = $state('');
-  let message = $state('');
-  let messageIsError = $state(false);
+  import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
+  import { DEMO_ROLES, DEMO_DASHBOARDS, type DemoRole } from '$lib/demo-access';
+
+  let role = $state<DemoRole>('Student');
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    if (password !== confirmPassword) {
-      message = 'The passwords do not match.';
-      messageIsError = true;
-      return;
-    }
-
-    message =
-      'Account creation will be available when CampusFix authentication is connected.';
-    messageIsError = false;
+    void goto(resolve(DEMO_DASHBOARDS[role]));
   }
 </script>
 
@@ -26,7 +19,7 @@
 <main class="app auth-page">
   <section class="auth-card" aria-labelledby="signup-title">
     <div class="welcome-panel">
-      <a class="brand auth-brand" href="/">CampusFix</a>
+      <a class="brand auth-brand" href={resolve('/')}>CampusFix</a>
 
       <div class="welcome-copy">
         <p class="welcome-label">WELCOME TO CAMPUSFIX</p>
@@ -62,17 +55,12 @@
         <p class="secondary-text">Sign up to use CampusFix.</p>
       </div>
 
-      {#if message}
-        <div
-          class="notice-box auth-message"
-          class:error={messageIsError}
-          role={messageIsError ? 'alert' : 'status'}
-        >
-          {message}
-        </div>
-      {/if}
+      <p class="notice-box auth-message">
+        Demo mode: choose a role to explore its dashboard. The other fields can
+        contain anything or be left blank. No account is created.
+      </p>
 
-      <form onsubmit={handleSubmit}>
+      <form onsubmit={handleSubmit} novalidate>
         <div class="form-grid">
           <div class="field-block">
             <label class="field-label" for="name">Full name</label>
@@ -82,16 +70,15 @@
               type="text"
               autocomplete="name"
               placeholder="Your full name"
-              required
             />
           </div>
 
           <div class="field-block">
             <label class="field-label" for="role">I am a</label>
-            <select id="role" name="role" required>
-              <option value="" disabled selected>Select your role</option>
-              <option value="Student">Student</option>
-              <option value="Faculty">Faculty</option>
+            <select id="role" name="role" bind:value={role}>
+              {#each DEMO_ROLES as option (option)}
+                <option value={option}>{option}</option>
+              {/each}
             </select>
           </div>
 
@@ -103,7 +90,6 @@
               type="email"
               autocomplete="email"
               placeholder="you@example.edu"
-              required
             />
           </div>
 
@@ -114,10 +100,7 @@
               name="password"
               type="password"
               autocomplete="new-password"
-              bind:value={password}
-              minlength="8"
-              placeholder="At least 8 characters"
-              required
+              placeholder="Any password for this demo"
             />
           </div>
 
@@ -130,28 +113,25 @@
               name="confirm-password"
               type="password"
               autocomplete="new-password"
-              bind:value={confirmPassword}
-              minlength="8"
               placeholder="Enter it again"
-              required
             />
           </div>
         </div>
 
         <button class="btn-primary signup-button" type="submit">
-          Create account
+          Continue to dashboard
         </button>
       </form>
 
       <div class="auth-links">
         <p>
           Already have an account?
-          <a href="/login">Log in</a>
+          <a href={resolve('/login')}>Log in</a>
         </p>
 
         <p>
           Staff member?
-          <a href="/request-access">Request staff access</a>
+          <a href={resolve('/request-access')}>Request staff access</a>
         </p>
       </div>
     </div>
@@ -161,10 +141,11 @@
 <style>
   .auth-page {
     box-sizing: border-box;
-    width: 100vw;
+    width: 100%;
     max-width: none;
     min-height: 100vh;
-    margin-left: calc(50% - 50vw);
+    margin: 0;
+    color-scheme: light;
     padding: 40px 24px;
     display: grid;
     place-items: center;
@@ -331,10 +312,6 @@
   .auth-message {
     display: block;
     margin-bottom: 18px;
-  }
-
-  .auth-message.error {
-    color: var(--danger);
   }
 
   .form-grid {

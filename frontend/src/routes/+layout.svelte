@@ -11,7 +11,7 @@
 	let message = $state('');
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const tabs = [
-		['/', 'Dashboard'],
+		['/student', 'Dashboard'],
 		['/my-tickets', 'My tickets'],
 		['/map', 'Map']
 	];
@@ -23,7 +23,9 @@
 			(path) => page.url.pathname === path || page.url.pathname.startsWith(path + '/')
 		)
 	);
-	let isAuthPage = $derived(['/login', '/signup', '/request-access'].includes(page.url.pathname));
+	let isAuthPage = $derived(
+		['/', '/login', '/signup', '/request-access'].includes(page.url.pathname)
+	);
 
 	function notify(text: string) {
 		message = text;
@@ -39,7 +41,7 @@
 			const [path, query = ''] = hash.split('?');
 			const params = new URLSearchParams(query);
 			const routes: Record<string, string> = {
-				'/dashboard': '/',
+				'/dashboard': '/student',
 				'/my-tickets': '/my-tickets',
 				'/report': '/report',
 				'/profile': '/profile',

@@ -22,7 +22,11 @@ npm.cmd run preview
 ## Structure
 
 - `src/routes/+layout.svelte`: shared navigation and toast messages.
-- `src/routes/+page.svelte`: dashboard at `/`.
+- `src/routes/+page.ts`: sends `/` to `/signup`.
+- `src/routes/student/+page.svelte`: student dashboard at `/student`.
+- `src/routes/signup/+page.svelte`: signup/demo role selection.
+- `src/routes/login/+page.svelte`: login/demo role selection.
+- `src/lib/demo-access.ts`: temporary role-to-dashboard mapping.
 - `src/routes/my-tickets/+page.svelte`: `/my-tickets`.
 - `src/routes/report/+page.svelte`: `/report`.
 - `src/routes/profile/+page.svelte`: `/profile`.
@@ -37,6 +41,19 @@ npm.cmd run preview
 Old hash bookmarks are translated when the app starts. Ticket storage still uses `campusfix_mock_tickets_v1`, so data remains available on the same browser origin.
 
 ## Backend
+
+Signup and login currently provide demo navigation only. Student opens
+`/student`, Technician opens `/technician`, and Admin opens `/admin`. Any field
+contents (including blank fields, short passwords, or mismatched confirmations)
+are accepted; the selected role alone controls the destination. Credentials are
+never read, stored, or sent by these handlers, and no account or session is
+created. Existing dashboard names and ticket data remain mock data.
+
+Before real accounts are enabled, notify the backend engineer to coordinate the
+authentication contract and verified user roles. Replace this demo flow with the
+authenticated API client through `$lib/api.ts`; the server's verified role must
+determine access instead of the demo dropdown. The existing staff-access page
+remains a placeholder for the future account approval flow.
 
 During development, requests to `/api` are proxied to Aspire's `services__server__http__0` address, or `CAMPUSFIX_API_URL`, or `http://localhost:5528`. For standalone development, copy `.env.example` to `.env` and set the backend address. With the server running, `/api/weatherforecast` is the available sample endpoint.
 

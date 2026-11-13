@@ -1,9 +1,13 @@
 <script lang="ts">
-  let message = $state('');
+  import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
+  import { DEMO_ROLES, DEMO_DASHBOARDS, type DemoRole } from '$lib/demo-access';
+
+  let role = $state<DemoRole>('Student');
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
-    message = 'Sign-in not fully connected yet.';
+    void goto(resolve(DEMO_DASHBOARDS[role]));
   }
 </script>
 
@@ -14,7 +18,7 @@
 <main class="app auth-page">
   <section class="auth-card" aria-labelledby="login-title">
     <div class="welcome-panel">
-      <a class="brand auth-brand" href="/">CampusFix</a>
+      <a class="brand auth-brand" href={resolve('/')}>CampusFix</a>
 
       <div class="welcome-copy">
         <p class="welcome-label">CAMPUS MAINTENANCE, MADE EASIER</p>
@@ -50,11 +54,20 @@
         <p class="secondary-text">Log in to continue to CampusFix.</p>
       </div>
 
-      {#if message}
-        <div class="notice-box auth-message" role="status">{message}</div>
-      {/if}
+      <p class="notice-box auth-message">
+        Demo mode: choose a role to explore its dashboard. Any email and password
+        work, including blank fields. No sign-in details are saved.
+      </p>
 
-      <form onsubmit={handleSubmit}>
+      <form onsubmit={handleSubmit} novalidate>
+        <div class="field-block">
+          <label class="field-label" for="role">I am a</label>
+          <select id="role" name="role" bind:value={role}>
+            {#each DEMO_ROLES as option (option)}
+              <option value={option}>{option}</option>
+            {/each}
+          </select>
+        </div>
         <div class="field-block">
           <label class="field-label" for="email">Email address</label>
           <input
@@ -63,7 +76,6 @@
             type="email"
             autocomplete="email"
             placeholder="you@example.edu"
-            required
           />
         </div>
 
@@ -75,7 +87,6 @@
             type="password"
             autocomplete="current-password"
             placeholder="Enter your password"
-            required
           />
         </div>
 
@@ -85,12 +96,12 @@
       <div class="auth-links">
         <p>
           New to CampusFix?
-          <a href="/signup">Create an account</a>
+          <a href={resolve('/signup')}>Create an account</a>
         </p>
 
         <p>
           Staff member?
-          <a href="/request-access">Request staff access</a>
+          <a href={resolve('/request-access')}>Request staff access</a>
         </p>
       </div>
     </div>
@@ -100,10 +111,11 @@
 <style>
   .auth-page {
     box-sizing: border-box;
-    width: 100vw;
+    width: 100%;
     max-width: none;
     min-height: 100vh;
-    margin-left: calc(50% - 50vw);
+    margin: 0;
+    color-scheme: light;
     padding: 40px 24px;
     display: grid;
     place-items: center;
@@ -284,7 +296,8 @@
     font-weight: 600;
   }
 
-  .field-block input {
+  .field-block input,
+  .field-block select {
     box-sizing: border-box;
     width: 100%;
     min-height: 50px;
@@ -301,7 +314,8 @@
     color: #8a948e;
   }
 
-  .field-block input:focus {
+  .field-block input:focus,
+  .field-block select:focus {
     border-color: #168a78;
     outline: none;
     box-shadow: 0 0 0 3px rgba(22, 138, 120, 0.14);
