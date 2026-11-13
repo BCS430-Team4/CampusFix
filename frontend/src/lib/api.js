@@ -49,6 +49,7 @@ export const CampusFixAPI = {
     return loadAll().find(t => t.id === id) || null;
   },
 
+  /** @param {import('./types/ticket-location.js').CreateTicketInput} data */
   addTicket(data) {
     const list = loadAll();
     const nums = list.map(t => parseInt(String(t.id).replace('CF-', ''), 10)).filter(n => !isNaN(n));
@@ -60,6 +61,7 @@ export const CampusFixAPI = {
       category: data.category,
       building: data.building || 'Not specified',
       room: data.room || 'Not specified',
+      location: data.location ? { ...data.location } : null,
       description: data.description || '',
       status: 'Open',
       priority: null,

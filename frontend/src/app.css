@@ -46,8 +46,7 @@ body {
 
 .topbar { background: var(--green); color: #EAF2EF; padding: 14px 20px; }
 .topbar .row { display: flex; align-items: center; justify-content: space-between; }
-.brand { display: inline-flex; align-items: baseline; font-family: "Pacifico", "Segoe Script", cursive; font-size: 27px; font-weight: 400; line-height: 1.5; text-decoration: none; color: inherit; white-space: nowrap; }
-.brand-wrench { width: 12px; height: 27px; align-self: center; margin: 0 -3px 0 1px; transform: rotate(8deg); flex-shrink: 0; }
+.brand { font-size: 22px; letter-spacing: 0.2px; text-decoration: none; color: inherit; }
 .back-row { display: flex; align-items: center; gap: 12px; cursor: pointer; color: inherit; text-decoration: none; }
 .back-row .title { font-size: 20px; }
 .pill-role { font-size: 12px; background: rgba(255,255,255,0.16); padding: 3px 10px; border-radius: 999px; }
@@ -196,4 +195,99 @@ input:focus, textarea:focus, select:focus, button:focus-visible, a:focus-visible
   .resolved-row, .profile-row { flex-wrap: wrap; gap: 4px; }
   .location-fields { grid-template-columns: 1fr; }
   .comment-input-row input { min-width: 0; }
+}
+
+/* Student screens share one responsive shell; staff layouts keep their own styles. */
+.app.student-app {
+  width: 100%;
+  min-height: 100dvh;
+}
+.student-app .content,
+.student-app form,
+.student-app .ticket-row .top > span:first-child,
+.student-app .back-row > div,
+.student-app .profile-avatar + div {
+  min-width: 0;
+}
+.student-app .back-row .title,
+.student-app .ticket-meta,
+.student-app .resolved-row > span,
+.student-app .profile-avatar + div,
+.student-app .profile-row > span {
+  overflow-wrap: anywhere;
+}
+.student-app .back-row > span { flex-shrink: 0; }
+.student-app .content { overflow-wrap: anywhere; }
+.student-app .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.student-app .stat-card { min-width: 0; }
+.student-app .filter-row { max-width: 100%; padding: 3px 2px 6px; }
+.student-app .comment-input-row input { min-width: 0; }
+
+@media (max-width: 640px) {
+  .app.student-app { border-inline: 0; }
+  .student-app .content { padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .student-app .topbar { padding: 10px 16px; }
+  .student-app .topbar .row { gap: 12px; }
+  .student-app .brand { display: inline-flex; align-items: center; min-height: 44px; }
+  .student-app .avatar { width: 44px; height: 44px; flex-shrink: 0; }
+  .student-app .back-row { min-height: 44px; line-height: 1.3; }
+  .student-app .tabbar { position: sticky; top: 0; z-index: 10; }
+  .student-app .tab {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 48px; padding: 10px 8px; font-size: 14px;
+  }
+  .student-app input[type=text],
+  .student-app input[type=email],
+  .student-app input[type=password],
+  .student-app textarea,
+  .student-app select {
+    min-height: 44px; font-size: 16px; line-height: 1.4;
+  }
+  .student-app .btn-primary,
+  .student-app .btn-secondary,
+  .student-app .btn-text-danger { min-height: 44px; font-size: 15px; }
+  .student-app .chip { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+  .student-app .field-label { font-size: 14px; }
+  .student-app .location-fields { grid-template-columns: 1fr; }
+  .student-app .cat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .student-app .cat-btn { min-height: 64px; padding: 12px 4px; font-size: 12px; }
+  .student-app .ticket-row { padding: 14px; }
+  .student-app .ticket-title { font-size: 15px; line-height: 1.4; }
+  .student-app .ticket-meta { font-size: 13px; line-height: 1.5; margin-top: 6px; }
+  .student-app .resolved-row { align-items: flex-start; padding-block: 12px; }
+  .student-app .stat-label { color: var(--secondary); font-size: 12px; line-height: 1.4; }
+  .student-app .profile-row {
+    display: grid; grid-template-columns: minmax(90px, .8fr) minmax(0, 1.7fr);
+    gap: 8px 12px; align-items: start; padding-block: 14px;
+  }
+  .student-app .meta-grid { gap: 16px; }
+  .student-app .meta-grid > div { min-width: 0; }
+  .student-app .meta-grid .k { font-size: 12px; color: var(--secondary); }
+  .student-app .meta-grid .v { font-size: 14px; line-height: 1.5; }
+  .student-app .comment .body { font-size: 14px; line-height: 1.55; }
+  .student-app .comment-input-row { align-items: stretch; }
+  .student-app .comment-input-row button { min-height: 44px; flex-shrink: 0; }
+  .student-app .dropzone { padding: 18px 12px; }
+  .student-app .dropzone input { width: 100%; min-width: 0; font-size: 14px; }
+  .student-app .dropzone input::file-selector-button { min-height: 44px; font: inherit; }
+  .student-app .map-heading { align-items: flex-start; flex-wrap: wrap; }
+  .student-app .reset-button,
+  .student-app .building-button { min-height: 44px; }
+  .student-app .map-frame .campus-map { height: clamp(240px, 48svh, 390px); }
+  .student-app .map-frame .leaflet-control-zoom a { width: 44px; height: 44px; line-height: 44px; }
+  .student-app .unmapped summary { padding-block: 12px; line-height: 1.5; }
+}
+
+@media (max-width: 480px) {
+  .student-app .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .student-app .ticket-row .top { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .student-app .resolved-row { flex-direction: column; gap: 6px; }
+  .student-app .meta-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 360px) {
+  .student-app .profile-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .student-app .comment-input-row { flex-direction: column; }
+  .student-app .comment-input-row button { padding: 12px; }
+  .student-app .stat-card { padding: 12px 6px; }
 }

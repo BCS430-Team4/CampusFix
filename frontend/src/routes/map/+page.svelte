@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { CampusFixAPI } from '$lib/api.js';
-  import { CAMPUS_BUILDINGS, CAMPUS_BOUNDS } from '$lib/campus.js';
+  import { CAMPUS_BUILDINGS, CAMPUS_BOUNDS, CAMPUS_TILE_URL, CAMPUS_TILE_OPTIONS } from '$lib/campus.js';
   import TicketRow from '$lib/components/TicketRow.svelte';
   import 'leaflet/dist/leaflet.css';
 
@@ -48,10 +48,7 @@
         L = module.default || module;
         instance = L.map(mapElement, { scrollWheelZoom: false, minZoom: 14, maxZoom: 19 });
         instance.fitBounds(CAMPUS_BOUNDS, { padding: [18, 18] });
-        tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(instance);
+        tiles = L.tileLayer(CAMPUS_TILE_URL, CAMPUS_TILE_OPTIONS).addTo(instance);
         tiles.on('tileerror', () => tileError = true);
         markerLayer = L.layerGroup().addTo(instance);
         observer = new ResizeObserver(() => instance.invalidateSize());
