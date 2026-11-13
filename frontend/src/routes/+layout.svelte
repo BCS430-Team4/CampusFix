@@ -1,5 +1,6 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
+	import Button from '$lib/components/Button.svelte'
   import { onMount, setContext } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -15,6 +16,9 @@
     page.url.pathname === '/technician' ||
     page.url.pathname.startsWith('/technician/')
   ); 
+  let isAuthPage = $derived(
+    page.url.pathname === '/login' || page.url.pathname === '/signup'
+  );
 
   function notify(text) {
     message = text;
@@ -43,6 +47,10 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
+
+{#if !isAuthPage}
+<Button />
+{/if}
 
 {@render children()}
 
