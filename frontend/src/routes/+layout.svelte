@@ -23,6 +23,7 @@
 			(path) => page.url.pathname === path || page.url.pathname.startsWith(path + '/')
 		)
 	);
+	let isAuthPage = $derived(['/login', '/signup', '/request-access'].includes(page.url.pathname));
 
 	function notify(text: string) {
 		message = text;
@@ -59,7 +60,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{#if staffView}
+{#if staffView || isAuthPage}
 	{@render children()}
 {:else}
 	<div class="app student-app">
