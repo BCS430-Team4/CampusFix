@@ -21,7 +21,7 @@
 
 <header class="topbar">
     <div class="row">
-        <a class="brand" href={resolve('/admin')}>CampusFix</a>
+        <a class="brand headline" href={resolve('/admin')}>CampusFix</a>
 
         <div class="topbar-right">
             <span class="pill-role">Administrator</span>

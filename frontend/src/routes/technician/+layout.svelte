@@ -18,7 +18,7 @@
 
 <header class="topbar">
     <div class="row">
-        <a class="brand" href="/technician">CampusFix</a>
+        <a class="brand headline" href="/technician">CampusFix</a>
 
         <div class="topbar-right">
             <span class="pill-role">Technician</span>
