@@ -1,12 +1,13 @@
 
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.ts';
+  import { resolve } from '$app/paths';
+  import { CampusFixAPI, type Ticket } from '$lib/api';
   import { CATEGORIES, STATUS_COLOR } from '$lib/shared.js';
 
   const statuses = ['All', 'Resolved', 'Closed'];
 
-  let tickets = $state([]);
+  let tickets = $state<Ticket[]>([]);
   let loading = $state(true);
   let error = $state('');
 
@@ -44,19 +45,19 @@
     [...new Set(
       completed
         .map(ticket => ticket.technician)
-        .filter(Boolean)
+        .filter((name): name is string => !!name)
     )].sort()
   );
 
   // Parse completion dates safely
-  function completionTime(ticket) {
+  function completionTime(ticket: Ticket) {
     if (!ticket.completedAt) return null;
 
     const time = Date.parse(ticket.completedAt);
     return Number.isNaN(time) ? null : time;
   }
 
-  function completionDate(ticket) {
+  function completionDate(ticket: Ticket) {
     const time = completionTime(ticket);
 
     if (time === null) {
@@ -72,7 +73,7 @@
 
   // Sort by completion date when available,
   // otherwise by the most recent ticket update.
-  function sortTime(ticket) {
+  function sortTime(ticket: Ticket) {
     return completionTime(ticket) ??
       (Date.parse(ticket.updated || '') || 0);
   }
@@ -133,7 +134,7 @@
     });
   });
 
-  // Load data from CampusFix mock API
+  // Load completed tickets from the API.
   onMount(async () => {
     try {
       const result = await CampusFixAPI.getTickets();
@@ -152,8 +153,8 @@
     }
   });
 
-  function statusColors(value) {
-    return STATUS_COLOR[value] ?? STATUS_COLOR.Open;
+  function statusColors(value: string) {
+    return STATUS_COLOR[value as keyof typeof STATUS_COLOR] ?? STATUS_COLOR.Open;
   }
 
   // Reset all filters
@@ -260,7 +261,7 @@
           >
             <option value="All">All categories</option>
 
-            {#each CATEGORIES as item}
+            {#each CATEGORIES as item (item.label)}
               <option value={item.label}>
                 {item.label}
               </option>
@@ -281,7 +282,7 @@
             id="status-filter"
             bind:value={status}
           >
-            {#each statuses as value}
+            {#each statuses as value (value)}
               <option value={value}>
                 {value === 'All' ? 'All completed' : value}
               </option>
@@ -307,7 +308,7 @@
               Unassigned
             </option>
 
-            {#each technicians as name}
+            {#each technicians as name (name)}
               <option value={name}>{name}</option>
             {/each}
           </select>
@@ -446,7 +447,7 @@
 
           <a
             class="details-button"
-            href={'/tickets/' + encodeURIComponent(ticket.id)}
+            href={resolve('/admin/tickets/[id]', { id: ticket.id })}
             aria-label={'View details for ticket ' + ticket.id}
           >
             View repair details

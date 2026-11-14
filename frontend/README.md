@@ -60,6 +60,12 @@ Notify the backend engineer about the remaining contracts before enabling them: 
 
 No backend implementation is changed by this frontend integration. The static adapter writes to `dist/`; coordinate production deep-link fallback and `/api` routing with the backend engineer. Vite's proxy applies only during development.
 
+## Administrator ticket management
+
+Administrator ticket links open `/admin/tickets/[id]` and retain the admin navigation. The detail page saves technician assignment and Low/Medium/High urgency through `PATCH /api/tickets/{id}` using the existing `technician`, `priority`, and `status` fields. Assigning an open ticket changes its status to Assigned; unassigning an Assigned ticket returns it to Open. Reassigning an in-progress repair preserves its progress. Finished tickets show their saved assignment, comments, and repair notes as history.
+
+J. Delgado is a typed demo selection, matching the technician dashboard. Saving an assignment stores that name on the database ticket. No separate technician account is created: the current API does not expose a technician directory or technician-account creation. Notify the backend engineer that a directory with stable technician identities is needed to replace this demo option.
+
 ## Campus map
 
 Leaflet and OpenStreetMap display backend reports grouped by building. Active reports are shown by default; All reports includes resolved and closed tickets. Select a building pin or list item to open its reports. Building pins locate buildings, not rooms or individual browser-only estimates.

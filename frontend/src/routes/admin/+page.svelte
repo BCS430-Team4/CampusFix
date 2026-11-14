@@ -1,15 +1,16 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.ts';
+  import { resolve } from '$app/paths';
+  import { CampusFixAPI, type Ticket } from '$lib/api';
   import { STATUS_COLOR } from '$lib/shared.js';
 
-  const priorityOrder = {
+  const priorityOrder: Record<string, number> = {
     High: 0,
     Medium: 1,
     Low: 2
   };
 
-  let tickets = $state([]);
+  let tickets = $state<Ticket[]>([]);
   let loading = $state(true);
   let error = $state('');
 
@@ -57,8 +58,8 @@
         }
 
         return (
-          (priorityOrder[a.priority] ?? 3) -
-          (priorityOrder[b.priority] ?? 3)
+          (priorityOrder[a.priority ?? ''] ?? 3) -
+          (priorityOrder[b.priority ?? ''] ?? 3)
         );
       })
       .slice(0, 4)
@@ -77,7 +78,6 @@
   onMount(async () => {
     try {
       const result = await CampusFixAPI.getTickets();
-      console.log(result);
 
       if (!Array.isArray(result)) {
         throw new Error('Invalid ticket data');
@@ -92,8 +92,8 @@
     }
   });
 
-  function statusColors(status) {
-    return STATUS_COLOR[status] ?? STATUS_COLOR.Open;
+  function statusColors(status: string) {
+    return STATUS_COLOR[status as keyof typeof STATUS_COLOR] ?? STATUS_COLOR.Open;
   }
 </script>
 
@@ -184,7 +184,7 @@
           <a
             class="ticket-row"
             style:border-left={'4px solid ' + statusColors(ticket.status)[0]}
-            href={'/tickets/' + encodeURIComponent(ticket.id)}
+            href={resolve('/admin/tickets/[id]', { id: ticket.id })}
           >
 
             <div class="top">
@@ -258,7 +258,7 @@
         {#each recentlyResolved as ticket (ticket.id)}
           <a
             class="completed-item"
-            href={'/tickets/' + encodeURIComponent(ticket.id)}
+            href={resolve('/admin/tickets/[id]', { id: ticket.id })}
           >
 
             <span class="ticket-id">{ticket.id}</span>
@@ -309,7 +309,7 @@
       {#each tickets as ticket (ticket.id)}
         <a
           class="ticket-row"
-          href={'/tickets/' + encodeURIComponent(ticket.id)}
+          href={resolve('/admin/tickets/[id]', { id: ticket.id })}
           style:border-left={'4px solid ' + statusColors(ticket.status)[0]}
         >
           <div class="top">
