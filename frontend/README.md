@@ -1,85 +1,75 @@
 # CampusFix frontend
 
-SvelteKit frontend for the ASP.NET Core backend. The student pages retain the existing design and local mock ticket data.
+SvelteKit frontend connected to the ASP.NET Core API and PostgreSQL. The student design, mobile layouts, signup role routing, and optional Leaflet picker are retained.
 
-## Development
+## Run the complete application
 
-From this folder:
+Start Docker Desktop, then run from the repository root with the .NET 10 SDK installed:
 
 ```powershell
-npm.cmd install
+dotnet run --project .\CampusFix.AppHost\CampusFix.AppHost.csproj --launch-profile http
+```
+
+Aspire starts PostgreSQL, object storage, the API, and Vite. Open the frontend URL listed by Aspire. `/` opens signup; the demo role selector opens `/student`, `/technician`, or `/admin`.
+
+For a separate frontend terminal with the API already running, use this folder:
+
+```powershell
+npm.cmd ci
 npm.cmd run dev
 ```
 
-Open the URL printed in the terminal. Stop with Ctrl+C.
+Requests to `/api` are proxied to Aspire's `services__server__http__0` address, then `CAMPUSFIX_API_URL`, then `http://localhost:5528`. For a custom standalone backend, set `$env:CAMPUSFIX_API_URL` before starting Vite. The backend's `/health` endpoint reports health.
 
 ```powershell
+npm.cmd test
 npm.cmd run check
 npm.cmd run build
-npm.cmd run preview
 ```
+
+Stop the AppHost with Ctrl+C. Browser-only data is tied to the full origin, including the frontend port.
 
 ## Structure
 
-- `src/routes/+layout.svelte`: shared navigation and toast messages.
-- `src/routes/+page.ts`: sends `/` to `/signup`.
-- `src/routes/student/+page.svelte`: student dashboard at `/student`.
-- `src/routes/signup/+page.svelte`: signup/demo role selection.
-- `src/routes/login/+page.svelte`: login/demo role selection.
+- `src/routes/+page.ts`: redirects `/` to `/signup` while preserving legacy hash bookmarks.
+- `src/routes/+layout.svelte`: shared student navigation and toast messages.
+- `src/routes/student/+page.svelte`: student dashboard.
+- `src/routes/report/+page.svelte`: report form with optional building, room, and estimated map pin.
+- `src/routes/my-tickets`, `profile`, `map`, and `tickets/[id]`: student pages.
+- `src/routes/admin` and `technician`: staff dashboards and ticket pages.
+- `src/routes/signup`, `login`, and `request-access`: demo access screens.
 - `src/lib/demo-access.ts`: temporary role-to-dashboard mapping.
-- `src/routes/my-tickets/+page.svelte`: `/my-tickets`.
-- `src/routes/report/+page.svelte`: `/report`.
-- `src/routes/profile/+page.svelte`: `/profile`.
-- `src/routes/tickets/[id]/+page.svelte`: `/tickets/CF-1042`, for example.
-- `src/lib/pages/`: page components.
-- `src/lib/components/`: shared topbar and ticket rows.
-- `src/lib/api.js`: mock ticket storage.
-- `src/app.css`: shared styles.
-- `src/app.html`: the HTML shell SvelteKit uses.
-- `static/`: static files served directly, when needed.
+- `src/lib/api.ts`: typed HTTP client and local map-pin metadata.
+- `src/lib/api.js`: compatibility re-export for older imports; no mock ticket implementation remains.
+- `src/lib/types/ticket-location.ts`: estimated map-location types.
+- `src/app.css`: shared styles, including the scoped student mobile layout.
 
-Old hash bookmarks are translated when the app starts. Ticket storage still uses `campusfix_mock_tickets_v1`, so data remains available on the same browser origin.
+## Database and browser-only pins
 
-## Backend
+Tickets and comments now come exclusively from the API. Creating, loading, editing, cancelling, and commenting on reports wait for HTTP responses. A failed request shows an error rather than falling back to mock tickets. Existing browser tickets under `campusfix_mock_tickets_v1` are left untouched and are not automatically imported into PostgreSQL.
 
-Signup and login currently provide demo navigation only. Student opens
-`/student`, Technician opens `/technician`, and Admin opens `/admin`. Any field
-contents (including blank fields, short passwords, or mismatched confirmations)
-are accepted; the selected role alone controls the destination. Credentials are
-never read, stored, or sent by these handlers, and no account or session is
-created. Existing dashboard names and ticket data remain mock data.
+The supported create fields are title, category, building, room, and description. Ticket updates use the server's supported fields. Technician updates and repair notes use `/api/tickets/{id}/comments`; resolving a repair PATCHes its status. History reads technician comments beginning with `Repair completed: ` as repair notes, and does not invent a dedicated completion timestamp.
 
-Before real accounts are enabled, notify the backend engineer to coordinate the
-authentication contract and verified user roles. Replace this demo flow with the
-authenticated API client through `$lib/api.ts`; the server's verified role must
-determine access instead of the demo dropdown. The existing staff-access page
-remains a placeholder for the future account approval flow.
+Map coordinates are not supported by the backend yet. Pins are intentionally saved only in this browser under `campusfix_local_ticket_pins_v1`, associated with the server-returned ticket ID and identifying fields. They are not sent as unsupported fields. The report form and ticket detail explain that pins are not shared with other devices. Changing the frontend port or clearing browser data makes these local estimates unavailable. Failed server saves do not cache pins; successful deletion or reset clears corresponding local metadata.
 
-During development, requests to `/api` are proxied to Aspire's `services__server__http__0` address, or `CAMPUSFIX_API_URL`, or `http://localhost:5528`. For standalone development, copy `.env.example` to `.env` and set the backend address. With the server running, `/api/weatherforecast` is the available sample endpoint.
+## Account integration and backend coordination
 
-Ticket operations remain local mock operations until the backend implements its ticket endpoints. Authentication and image uploads are not implemented. Alex Rivera remains the placeholder user.
+Signup and login are still demo navigation: Student opens `/student`, Technician `/technician`, and Admin `/admin`. Any field contents, including blank credentials, short passwords, and mismatched confirmations, are accepted. These handlers do not read, store, or transmit credentials, create accounts, or establish authenticated sessions. Names remain placeholders. The dropdown does not enforce server authorization.
 
-The app currently renders in the browser because its mock data uses localStorage. The static adapter writes to `dist/`, which can be served by ASP.NET Core. Production must route frontend page requests such as `/tickets/CF-1042` to `index.html` when no physical file matches. In ASP.NET Core, add `app.MapFallbackToFile("index.html")` after mapping API routes. Keep unmatched `/api` requests as API errors, rather than returning the frontend shell. The Vite proxy only applies during development.
+Notify the backend engineer about the remaining contracts before enabling them: ticket latitude/longitude and `isApproximate`, image uploads, dedicated completion notes/timestamps, comment IDs in comment responses, and authenticated user identity/role authorization. Current comment responses omit numeric IDs, so editing/deleting comments by ID is not exposed in this UI. Keep future generated API integration in or re-exported by `$lib/api.ts`.
 
+No backend implementation is changed by this frontend integration. The static adapter writes to `dist/`; coordinate production deep-link fallback and `/api` routing with the backend engineer. Vite's proxy applies only during development.
 
 ## Campus map
 
-The `/map` page uses Leaflet and OpenStreetMap tiles. Pins group the visible mock reports by building. Active reports are shown by default; All reports includes resolved and closed tickets. Select a pin or a building in the list to open its reports.
+Leaflet and OpenStreetMap display backend reports grouped by building. Active reports are shown by default; All reports includes resolved and closed tickets. Select a building pin or list item to open its reports. Building pins locate buildings, not rooms or individual browser-only estimates.
 
-`src/lib/campus.js` stores building positions computed from OpenStreetMap outlines. Locations cover Lupton, Nold, Roosevelt, and Gleeson. Buildings without confirmed coordinates are listed separately and are not pinned. Pins locate buildings rather than rooms.
+`src/lib/campus.js` contains confirmed positions for Lupton, Nold, Roosevelt, and Gleeson. Other locations are listed separately. Internet access is needed for imagery; ticket lists remain usable when imagery fails. Attribution stays visible. Choose an appropriate tile provider before public deployment.
 
-This preview uses the same local mock tickets as the other student pages. A future campus-wide map needs a backend endpoint that exposes only the report information each user is allowed to see.
+Coordinate references:
 
-Map imagery requires an internet connection. Ticket lists remain usable if map tiles fail. Attribution is displayed on the map. Before public deployment, choose a tile provider suitable for the expected usage and follow its usage policy.
-
-Coordinate sources:
 - https://www.openstreetmap.org/way/470067577 (Lupton)
 - https://www.openstreetmap.org/way/470067576 (Nold)
 - https://www.openstreetmap.org/way/470065741 (Roosevelt)
 - https://www.openstreetmap.org/way/470064987 (Gleeson)
-- https://map.farmingdale.edu/ (official campus building reference)
-
-## App window
-
-Run npm.cmd run dev:app from this folder to start Vite and open CampusFix in a separate Microsoft Edge app window. Code changes still update live. Close the window and press Ctrl+C in the terminal when finished. This uses the browser engine and the same site storage as Edge; it is not a packaged desktop installer.
-
+- https://map.farmingdale.edu/ (official campus reference)

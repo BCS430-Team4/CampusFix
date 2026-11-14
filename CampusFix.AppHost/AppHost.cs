@@ -2,6 +2,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var database = builder
     .AddPostgres("postgres-server")
+    .WithDataVolume("campusfix-postgres-data")
     .WithPgAdmin()
     .AddDatabase("campusfix-dev");
 

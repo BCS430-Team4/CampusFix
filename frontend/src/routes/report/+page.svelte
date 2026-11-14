@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { getContext, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { CampusFixAPI } from '$lib/api.js';
+	import { CampusFixAPI } from '$lib/api';
 	import { BUILDINGS, CATEGORIES } from '$lib/shared.js';
 	import Topbar from '$lib/components/Topbar.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -19,6 +19,9 @@
 	let location = $state<TicketLocation | null>(null);
 	let showLocationPicker = $state(false);
 	let locationButton: HTMLButtonElement;
+	let submitting = $state(false);
+	let submitError = $state('');
+	const notify = getContext<(text: string) => void>('notify');
 
 	async function closeLocationPicker() {
 		showLocationPicker = false;
@@ -26,8 +29,10 @@
 		locationButton?.focus();
 	}
 
-	function submit(event: SubmitEvent) {
+	async function submit(event: SubmitEvent) {
 		event.preventDefault();
+		if (submitting) return;
+		submitError = '';
 		errors = { category: !category, title: !title.trim() };
 		if (errors.category || errors.title) return;
 		const input: CreateTicketInput = {
@@ -38,8 +43,20 @@
 			room,
 			location
 		};
-		const ticket = CampusFixAPI.addTicket(input);
-		goto(resolve('/tickets/[id]?justSubmitted=1', { id: ticket.id }));
+		submitting = true;
+		try {
+			const ticket = await CampusFixAPI.addTicket(input);
+			await goto(resolve('/tickets/[id]', { id: ticket.id }));
+			notify(
+				location && !ticket.location
+					? 'Report saved, but the pin could not be stored in this browser.'
+					: 'Report submitted'
+			);
+		} catch {
+			submitError = 'Unable to submit your report. Your entries are still here; please try again.';
+		} finally {
+			submitting = false;
+		}
 	}
 </script>
 
@@ -47,7 +64,8 @@
 
 <Topbar title="Report an issue" />
 <main class="content">
-	<form onsubmit={submit} novalidate>
+	<form onsubmit={submit} aria-busy={submitting} novalidate>
+		{#if submitError}<div class="notice-box" role="alert">{submitError}</div>{/if}
 		<fieldset class="category-field">
 			<legend class="field-label">Category</legend>
 			<div class="cat-grid">
@@ -117,6 +135,9 @@
 				Map location <span class="optional">(optional)</span>
 			</h2>
 			<p class="location-help">Help us find the issue. Your best estimate is fine.</p>
+			<p class="location-help">
+				Map pins are saved only in this browser and aren't shared with other devices yet.
+			</p>
 			{#if location}<p class="location-saved" role="status">
 					<Icon name="map-pin" size={18} /><span>Approximate location added</span>
 				</p>{/if}
@@ -155,7 +176,9 @@
 				onchange={(event) => (photoCount = event.currentTarget.files?.length ?? 0)}
 			/>
 		</label>
-		<button class="btn-primary" style="margin-top:20px;" type="submit">Submit report</button>
+		<button class="btn-primary" style="margin-top:20px;" type="submit" disabled={submitting}
+			>{submitting ? 'Submitting…' : 'Submit report'}</button
+		>
 	</form>
 </main>
 

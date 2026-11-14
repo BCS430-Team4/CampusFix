@@ -1,7 +1,7 @@
 
 <script>
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.js';
+  import { CampusFixAPI } from '$lib/api.ts';
 
   // Placeholder administrator information.
   // Replace with authenticated user data later.
@@ -41,9 +41,9 @@
     ).length
   );
 
-  onMount(() => {
+  onMount(async () => {
     try {
-      const result = CampusFixAPI.getTickets();
+      const result = await CampusFixAPI.getTickets();
 
       if (!Array.isArray(result)) {
         throw new Error('Invalid ticket data');

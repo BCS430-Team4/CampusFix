@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.js';
+  import { CampusFixAPI } from '$lib/api.ts';
   import { STATUS_COLOR } from '$lib/shared.js';
 
   const technicianName = 'J. Delgado';
@@ -58,9 +58,9 @@
     });
   });
 
-  onMount(() => {
+  onMount(async () => {
     try {
-      tickets = CampusFixAPI.getTickets();
+      tickets = await CampusFixAPI.getTickets();
     } catch {
       error = 'Unable to load assigned tickets. Please refresh and try again.';
     } finally {

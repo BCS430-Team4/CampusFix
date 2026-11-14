@@ -3,6 +3,7 @@
 	import { onMount, setContext } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Topbar from '$lib/components/Topbar.svelte';
 	import '../app.css';
@@ -14,7 +15,7 @@
 		['/student', 'Dashboard'],
 		['/my-tickets', 'My tickets'],
 		['/map', 'Map']
-	];
+	] as const;
 	let secondary = $derived(
 		page.url.pathname === '/report' || page.url.pathname.startsWith('/tickets/')
 	);
@@ -40,18 +41,19 @@
 		if (hash.startsWith('/')) {
 			const [path, query = ''] = hash.split('?');
 			const params = new URLSearchParams(query);
-			const routes: Record<string, string> = {
+			const routes = {
 				'/dashboard': '/student',
 				'/my-tickets': '/my-tickets',
 				'/report': '/report',
 				'/profile': '/profile',
 				'/map': '/map'
-			};
+			} as const;
 			const ticketId = params.get('id');
+			const target = routes[path as keyof typeof routes];
 			if (path === '/ticket' && ticketId) {
-				goto('/tickets/' + encodeURIComponent(ticketId), { replaceState: true });
-			} else if (routes[path]) {
-				goto(routes[path], { replaceState: true });
+				goto(resolve('/tickets/[id]', { id: ticketId }), { replaceState: true });
+			} else if (target) {
+				goto(resolve(target), { replaceState: true });
 			}
 		}
 		return () => clearTimeout(timer);
@@ -69,12 +71,12 @@
 		{#if !secondary}
 			<Topbar />
 			<nav class="tabbar" aria-label="Student navigation">
-				{#each tabs as [href, label]}
+				{#each tabs as [href, label] (href)}
 					<a
 						class="tab"
 						class:active={page.url.pathname === href}
 						aria-current={page.url.pathname === href ? 'page' : undefined}
-						{href}>{label}</a
+						href={resolve(href)}>{label}</a
 					>
 				{/each}
 			</nav>
