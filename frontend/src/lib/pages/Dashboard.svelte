@@ -2,9 +2,14 @@
   import { CampusFixAPI } from '../api.js';
   import { greeting } from '../shared.js';
   import TicketRow from '../components/TicketRow.svelte';
-  const tickets = CampusFixAPI.getTickets();
-  const active = tickets.filter(t => ['Open', 'Assigned', 'In progress'].includes(t.status));
-  const resolved = tickets.filter(t => ['Resolved', 'Closed'].includes(t.status)).slice(0, 2);
+  import {onMount} from "svelte";
+  let tickets = $state([]);
+  const active = $derived(tickets.filter(t => ['Open', 'Assigned', 'In progress'].includes(t.status)));
+  const resolved = $derived(tickets.filter(t => ['Resolved', 'Closed'].includes(t.status)).slice(0, 2));
+  
+  onMount(async () => {
+    tickets = await CampusFixAPI.getTickets();
+  })
 </script>
 
 <div style="margin-bottom:18px;">

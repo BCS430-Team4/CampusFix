@@ -1,20 +1,20 @@
-<script>
+<script lang="ts">
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '../api.js';
+  import {CampusFixAPI, type Ticket} from '../api.ts';
   import { STATUS_COLOR } from '../shared.js';
   import Topbar from '../components/Topbar.svelte';
   import Icon from '../components/Icon.svelte';
   let { id, justSubmitted = false, notify } = $props();
-  let ticket = $state(null);
+  let ticket = $state<Ticket | null>();
   let editing = $state(false);
   let title = $state('');
   let description = $state('');
   let comment = $state('');
-  let colors = $derived(STATUS_COLOR[ticket?.status] || STATUS_COLOR.Open);
+  let colors = $derived(ticket != null ? STATUS_COLOR[ticket?.status] : STATUS_COLOR.Open);
 
-  onMount(() => {
-    ticket = CampusFixAPI.getTicket(id);
+  onMount(async () => {
+    ticket = await CampusFixAPI.getTicket(id);
     if (justSubmitted) notify('Report submitted');
   });
 
@@ -24,29 +24,33 @@
     editing = true;
   }
 
-  function save(event) {
+  async function save(event) {
     event.preventDefault();
     if (!title.trim()) { notify("Title can't be empty"); return; }
     if (ticket.status !== 'Open') return;
-    ticket = CampusFixAPI.updateTicket(id, { title: title.trim(), description: description.trim() });
+    ticket = await CampusFixAPI.updateTicket(id, { title: title.trim(), description: description.trim() });
     editing = false;
     notify('Changes saved');
   }
 
-  function cancel() {
+  async function cancel() {
     if (ticket.status !== 'Open' || !confirm("Cancel this report? This can't be undone.")) return;
-    CampusFixAPI.updateTicket(id, { status: 'Closed' });
-    CampusFixAPI.addComment(id, 'Report cancelled by reporter.');
+    await CampusFixAPI.updateTicket(id, { status: 'Closed' });
+    await CampusFixAPI.addComment(id, 'Report cancelled by reporter.');
     notify('Report cancelled');
     goto('/my-tickets');
   }
 
-  function send(event) {
+  async function send(event) {
     event.preventDefault();
     if (!comment.trim()) return;
-    ticket = CampusFixAPI.addComment(id, comment.trim());
+    ticket = await CampusFixAPI.addComment(id, comment.trim());
     comment = '';
   }
+  
+  $effect(() => {
+    console.log(colors)
+  })
 </script>
 
 <Topbar title={ticket?.title || 'Ticket not found'} idLabel={ticket?.id || ''} backHref="/my-tickets" />

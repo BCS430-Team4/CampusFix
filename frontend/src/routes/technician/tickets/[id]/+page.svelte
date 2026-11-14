@@ -1,7 +1,7 @@
 <script>
   import { getContext, onMount } from 'svelte';
   import { page } from '$app/state';
-  import { CampusFixAPI } from '$lib/api.js';
+  import { CampusFixAPI } from '$lib/api.ts';
   import { STATUS_COLOR } from '$lib/shared.js';
 
   const technicianName = 'J. Delgado';
@@ -26,9 +26,9 @@
     STATUS_COLOR[ticket?.status] || STATUS_COLOR.Open
   );
 
-  onMount(() => {
+  onMount(async () => {
     try {
-      const found = CampusFixAPI.getTicket(page.params.id);
+      const found = await CampusFixAPI.getTicket(page.params.id);
 
       if (!found || found.technician !== technicianName) {
         error = 'This ticket was not found or is not assigned to you.';
@@ -44,8 +44,8 @@
     }
   });
 
-  function currentTicket() {
-    const current = CampusFixAPI.getTicket(page.params.id);
+  async function currentTicket() {
+    const current = await CampusFixAPI.getTicket(page.params.id);
 
     if (!current || current.technician !== technicianName) {
       throw new Error('Assignment changed');

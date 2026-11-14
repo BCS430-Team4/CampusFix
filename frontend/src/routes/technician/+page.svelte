@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { CampusFixAPI } from '$lib/api.js';
+    import { CampusFixAPI } from '$lib/api.ts';
     import { STATUS_COLOR } from '$lib/shared.js';
 
     const technicianName = 'J. Delgado';

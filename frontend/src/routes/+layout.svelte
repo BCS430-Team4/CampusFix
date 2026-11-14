@@ -5,7 +5,8 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import Topbar from '$lib/components/Topbar.svelte';
-  import '../app.css';
+  import {CampusFixAPI} from "$lib/api.ts";
+	import '../app.css';
 
   let { children } = $props();
   let message = $state('');
@@ -51,6 +52,7 @@
 {#if !isAuthPage}
 <Button />
 {/if}
+<button onclick={CampusFixAPI.resetMockData}>Reset Mock Data</button>
 
 {@render children()}
 

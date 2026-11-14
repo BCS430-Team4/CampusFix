@@ -1,11 +1,11 @@
 <script>
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.js';
+  import { CampusFixAPI } from '$lib/api.ts';
   import { CAMPUS_BUILDINGS, CAMPUS_BOUNDS } from '$lib/campus.js';
   import TicketRow from '$lib/components/TicketRow.svelte';
   import 'leaflet/dist/leaflet.css';
 
-  const tickets = CampusFixAPI.getTickets();
+  let tickets = $state([]);
   let showAll = $state(false);
   let selected = $state('');
   let mapElement;
@@ -43,6 +43,8 @@
 
     (async () => {
       try {
+        tickets = await CampusFixAPI.getTickets();
+        
         const module = await import('leaflet');
         if (disposed) return;
         L = module.default || module;

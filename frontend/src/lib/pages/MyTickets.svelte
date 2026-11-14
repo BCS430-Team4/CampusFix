@@ -1,14 +1,19 @@
 <script>
   import { CampusFixAPI } from '../api.js';
   import TicketRow from '../components/TicketRow.svelte';
+  import {onMount} from "svelte";
   const filters = ['All', 'Open', 'Assigned', 'In progress', 'Resolved', 'Closed'];
-  const tickets = CampusFixAPI.getTickets();
+  let tickets = $state([]);
   let filter = $state('All');
   let search = $state('');
   let filtered = $derived(tickets.filter(t =>
     (filter === 'All' || t.status === filter) &&
     (!search || t.title.toLowerCase().includes(search.toLowerCase()) || t.building.toLowerCase().includes(search.toLowerCase()))
   ));
+
+  onMount(async () => {
+    tickets = await CampusFixAPI.getTickets();
+  })
 </script>
 
 <input type="text" aria-label="Search your tickets" placeholder="Search your tickets" bind:value={search} style="margin-bottom:12px;" />

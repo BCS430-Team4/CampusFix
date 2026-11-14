@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.js';
+  import { CampusFixAPI } from '$lib/api.ts';
   import { STATUS_COLOR } from '$lib/shared.js';
 
   const priorityOrder = {
@@ -74,9 +74,10 @@
       .slice(0, 3)
   );
 
-  onMount(() => {
+  onMount(async () => {
     try {
-      const result = CampusFixAPI.getTickets();
+      const result = await CampusFixAPI.getTickets();
+      console.log(result);
 
       if (!Array.isArray(result)) {
         throw new Error('Invalid ticket data');

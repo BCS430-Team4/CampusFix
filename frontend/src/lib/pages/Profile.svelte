@@ -1,9 +1,14 @@
 <script>
   import { CampusFixAPI } from '../api.js';
+  import {onMount} from "svelte";
   let { notify } = $props();
-  const tickets = CampusFixAPI.getTickets();
-  const active = tickets.filter(t => ['Open', 'Assigned', 'In progress'].includes(t.status)).length;
-  const resolved = tickets.filter(t => ['Resolved', 'Closed'].includes(t.status)).length;
+  let tickets = $state([]);
+  const active = $derived(tickets.filter(t => ['Open', 'Assigned', 'In progress'].includes(t.status)));
+  const resolved = $derived(tickets.filter(t => ['Resolved', 'Closed'].includes(t.status)).slice(0, 2));
+  onMount(async () => {
+    tickets = await CampusFixAPI.getTickets();
+  })
+  
 </script>
 
 <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
