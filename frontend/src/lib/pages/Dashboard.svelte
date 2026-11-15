@@ -1,12 +1,13 @@
-<script>
-  import { CampusFixAPI } from '../api.js';
+<script lang="ts">
+  import { resolve } from '$app/paths';
+  import { CampusFixAPI, type Ticket } from '$lib/api';
   import { greeting } from '../shared.js';
   import TicketRow from '../components/TicketRow.svelte';
   import {onMount} from "svelte";
-  let tickets = $state([]);
+  let tickets = $state<Ticket[]>([]);
   const active = $derived(tickets.filter(t => ['Open', 'Assigned', 'In progress'].includes(t.status)));
   const resolved = $derived(tickets.filter(t => ['Resolved', 'Closed'].includes(t.status)).slice(0, 2));
-  
+
   onMount(async () => {
     tickets = await CampusFixAPI.getTickets();
   })
@@ -16,7 +17,7 @@
   <div class="headline" style="font-size:22px;">{greeting()}</div>
   <div class="muted" style="font-size:13px;margin-top:2px;">You have {active.length} active report{active.length === 1 ? '' : 's'}</div>
 </div>
-<a class="card-cta" href="/report">
+<a class="card-cta" href={resolve('/report')}>
   <div class="cta-icon">+</div>
   <div><div style="font-size:15px;font-weight:600;">Report an issue</div><div class="muted" style="font-size:13px;">Takes about a minute</div></div>
 </a>
@@ -25,7 +26,7 @@
 {:else}<div class="empty-state">No active tickets right now.</div>{/each}
 <h2 class="section-title" style="margin-top:18px;">Recently resolved</h2>
 {#each resolved as ticket (ticket.id)}
-  <a class="resolved-row" href={'/tickets/' + encodeURIComponent(ticket.id)}>
+  <a class="resolved-row" href={resolve('/tickets/[id]', { id: ticket.id })}>
     <span><span class="ticket-id">{ticket.id}</span> &nbsp; {ticket.title}</span>
     <span class="muted">{ticket.status} · {ticket.updated}</span>
   </a>

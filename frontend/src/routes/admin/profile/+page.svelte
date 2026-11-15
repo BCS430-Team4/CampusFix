@@ -1,7 +1,7 @@
 
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.ts';
+  import { CampusFixAPI, type Ticket } from '$lib/api';
 
   // Placeholder administrator information.
   // Replace with authenticated user data later.
@@ -12,7 +12,7 @@
     initials: 'AD'
   };
 
-  let tickets = $state([]);
+  let tickets = $state<Ticket[]>([]);
   let loading = $state(true);
   let error = $state('');
 

@@ -1,5 +1,5 @@
 {
   "appHost": {
-    "path": "CampusFix.AppHost.AppHost/CampusFix.AppHost.csproj"
+    "path": "CampusFix.AppHost/CampusFix.AppHost.csproj"
   }
 }

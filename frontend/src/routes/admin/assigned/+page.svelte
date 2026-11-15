@@ -1,7 +1,8 @@
 
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.ts';
+  import { resolve } from '$app/paths';
+  import { CampusFixAPI, type Ticket } from '$lib/api';
   import { STATUS_COLOR } from '$lib/shared.js';
 
   // Administrator can filter through every ticket status.
@@ -14,13 +15,13 @@
     'Closed'
   ];
 
-  const priorityOrder = {
+  const priorityOrder: Record<string, number> = {
     High: 0,
     Medium: 1,
     Low: 2
   };
 
-  let tickets = $state([]);
+  let tickets = $state<Ticket[]>([]);
   let loading = $state(true);
   let error = $state('');
 
@@ -36,7 +37,7 @@
     [...new Set(
       tickets
         .map(ticket => ticket.technician)
-        .filter(Boolean)
+        .filter((name): name is string => !!name)
     )].sort()
   );
 
@@ -118,8 +119,8 @@
 
       if (sort === 'priority') {
         return (
-          (priorityOrder[a.priority] ?? 3) -
-          (priorityOrder[b.priority] ?? 3)
+          (priorityOrder[a.priority ?? ''] ?? 3) -
+          (priorityOrder[b.priority ?? ''] ?? 3)
         );
       }
 
@@ -147,8 +148,8 @@
   });
 
   // Get the shared status color and background.
-  function statusColors(value) {
-    return STATUS_COLOR[value] ?? STATUS_COLOR.Open;
+  function statusColors(value: string) {
+    return STATUS_COLOR[value as keyof typeof STATUS_COLOR] ?? STATUS_COLOR.Open;
   }
 
   // Reset all search and filter settings.
@@ -241,7 +242,7 @@
 
       <!-- Status Filters -->
       <div class="filter-row" aria-label="Status filters">
-        {#each statuses as value}
+        {#each statuses as value (value)}
           <button
             type="button"
             class="chip"
@@ -292,7 +293,7 @@
             <option value="All">All technicians</option>
             <option value="Unassigned">Unassigned</option>
 
-            {#each technicians as name}
+            {#each technicians as name (name)}
               <option value={name}>{name}</option>
             {/each}
           </select>
@@ -415,7 +416,7 @@
 
           <a
             class="view-button"
-            href={'/tickets/' + encodeURIComponent(ticket.id)}
+            href={resolve('/admin/tickets/[id]', { id: ticket.id })}
             aria-label={'View ticket ' + ticket.id}
           >
             View details
@@ -556,6 +557,7 @@
     overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

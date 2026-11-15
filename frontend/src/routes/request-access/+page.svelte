@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   let message = $state('');
 
   function handleSubmit(event: SubmitEvent) {
@@ -14,7 +15,7 @@
 
 <main class="app auth-page">
   <section class="auth-card" aria-labelledby="request-title">
-    <a class="brand auth-brand" href="/">CampusFix</a>
+    <a class="brand auth-brand" href={resolve('/')}>CampusFix</a>
 
     <h1 id="request-title" class="headline">Request staff access</h1>
     <p class="secondary-text">
@@ -71,9 +72,9 @@
     </form>
 
     <p class="auth-switch">
-      <a href="/signup">Back to signup</a>
+      <a href={resolve('/signup')}>Back to signup</a>
       ·
-      <a href="/login">Log in</a>
+      <a href={resolve('/login')}>Log in</a>
     </p>
   </section>
 </main>
