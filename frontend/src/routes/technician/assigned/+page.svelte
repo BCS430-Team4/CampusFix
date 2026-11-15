@@ -1,13 +1,14 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
-  import { CampusFixAPI } from '$lib/api.ts';
+  import { resolve } from '$app/paths';
+  import { CampusFixAPI, type Ticket } from '$lib/api';
   import { STATUS_COLOR } from '$lib/shared.js';
 
   const technicianName = 'J. Delgado';
   const statuses = ['All', 'Assigned', 'In progress', 'Open'];
-  const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+  const priorityOrder: Record<string, number> = { High: 0, Medium: 1, Low: 2 };
 
-  let tickets = $state([]);
+  let tickets = $state<Ticket[]>([]);
   let loading = $state(true);
   let error = $state('');
 
@@ -52,8 +53,8 @@
       }
 
       return (
-        (priorityOrder[a.priority] ?? 3) -
-        (priorityOrder[b.priority] ?? 3)
+        (priorityOrder[a.priority ?? ''] ?? 3) -
+        (priorityOrder[b.priority ?? ''] ?? 3)
       );
     });
   });
@@ -68,8 +69,8 @@
     }
   });
 
-  function statusColors(value) {
-    return STATUS_COLOR[value] || STATUS_COLOR.Open;
+  function statusColors(value: string) {
+    return STATUS_COLOR[value as keyof typeof STATUS_COLOR] || STATUS_COLOR.Open;
   }
 
   function clearFilters() {
@@ -109,7 +110,7 @@
       </div>
 
       <div class="filter-row" aria-label="Status filters">
-        {#each statuses as value}
+        {#each statuses as value (value)}
           <button
             type="button"
             class="chip"
@@ -163,7 +164,7 @@
       <a
         class="ticket-row assigned-ticket"
         style:border-left={'4px solid ' + statusColors(ticket.status)[0]}
-        href={'/technician/tickets/' + encodeURIComponent(ticket.id)}
+        href={resolve('/technician/tickets/[id]', { id: ticket.id })}
       >
         <div class="ticket-heading">
           <div>
@@ -301,6 +302,7 @@
     overflow-wrap: anywhere;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

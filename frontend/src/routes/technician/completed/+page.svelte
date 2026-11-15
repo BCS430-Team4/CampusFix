@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
-    import { CampusFixAPI } from '$lib/api.ts';
+    import { resolve } from '$app/paths';
+    import { CampusFixAPI, type Ticket } from '$lib/api';
     import { CATEGORIES } from '$lib/shared.js';
 
     const technicianName = 'J. Delgado';
 
-    let tickets = $state([]);
+    let tickets = $state<Ticket[]>([]);
     let loading = $state(true);
     let error = $state('');
 
@@ -20,12 +21,12 @@
         )
     );
 
-    function completionTime(ticket) {
+    function completionTime(ticket: Ticket) {
         const time = Date.parse(ticket.completedAt || '');
         return Number.isNaN(time) ? null : time;
     }
 
-    function completionDate(ticket) {
+    function completionDate(ticket: Ticket) {
         const time = completionTime(ticket);
 
         if (time === null) return 'Not Recorded';
@@ -128,7 +129,7 @@
                     <label class="field-label" for="category-filter">Category</label>
                     <select id="category-filter" bind:value={category}>
                         <option value="All">All categories</option>
-                        {#each CATEGORIES as item}
+                        {#each CATEGORIES as item (item.label)}
                             <option value={item.label}>{item.label}</option>
                         {/each}    
                     </select>
@@ -162,7 +163,7 @@
         {#each filtered as ticket (ticket.id)}
             <a
                 class="ticket-row completed-ticket"
-                href={'/technician/tickets/' + encodeURIComponent(ticket.id)}
+                href={resolve('/technician/tickets/[id]', { id: ticket.id })}
             >
                 <div class="ticket-heading">           
                     <div>
@@ -328,6 +329,7 @@
         overflow-wrap: anywhere;
         display: -webkit-box;
         -webkit-line-clamp: 3;
+        line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -372,4 +374,4 @@
     }
 
 
-</style>    
+</style>

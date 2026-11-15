@@ -29,6 +29,8 @@ npm.cmd run build
 
 Stop the AppHost with Ctrl+C. Browser-only data is tied to the full origin, including the frontend port.
 
+Stop an existing AppHost before starting another copy. If the backend is already healthy, reuse it and start only the frontend in a separate terminal to avoid rebuilding a running server executable.
+
 ## Structure
 
 - `src/routes/+page.ts`: redirects `/` to `/signup` while preserving legacy hash bookmarks.
@@ -37,6 +39,7 @@ Stop the AppHost with Ctrl+C. Browser-only data is tied to the full origin, incl
 - `src/routes/report/+page.svelte`: report form with optional building, room, and estimated map pin.
 - `src/routes/my-tickets`, `profile`, `map`, and `tickets/[id]`: student pages.
 - `src/routes/admin` and `technician`: staff dashboards and ticket pages.
+- `src/routes/technician/profile`: J. Delgado's demo profile with workload statistics from the ticket API.
 - `src/routes/signup`, `login`, and `request-access`: demo access screens.
 - `src/lib/demo-access.ts`: temporary role-to-dashboard mapping.
 - `src/lib/api.ts`: typed HTTP client and local map-pin metadata.

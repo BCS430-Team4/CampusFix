@@ -1,6 +1,6 @@
-<script>
-  let { name, size = 22 } = $props();
-  const paths = {
+<script lang="ts">
+  let { name, size = 22 }: { name: string; size?: number } = $props();
+  const paths: Record<string, string[]> = {
     monitor: ['M4 3h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z', 'M12 16v5M8 21h8'],
     bolt: ['m13 2-9 12h7l-1 8 10-13h-7l1-7Z'],
     droplet: ['M12 3c-2 3-7 7-7 11a7 7 0 0 0 14 0c0-4-5-8-7-11Z', 'M8 14a4 4 0 0 0 4 4'],
@@ -15,7 +15,7 @@
 </script>
 
 <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-  {#each paths[name] || [] as d}<path {d} />{/each}
+  {#each paths[name] || [] as d (d)}<path {d} />{/each}
   {#if name === 'more'}
     <circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" />
   {:else if name === 'camera'}

@@ -5,4 +5,4 @@
   const notify = getContext('notify');
 </script>
 
-<Ticket id={page.params.id} justSubmitted={page.url.searchParams.has('justSubmitted')} {notify} />
+<Ticket id={page.params.id ?? ''} justSubmitted={page.url.searchParams.has('justSubmitted')} {notify} />

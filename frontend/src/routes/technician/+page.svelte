@@ -1,12 +1,13 @@
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
-    import { CampusFixAPI } from '$lib/api.ts';
+    import { resolve } from '$app/paths';
+    import { CampusFixAPI, type Ticket } from '$lib/api';
     import { STATUS_COLOR } from '$lib/shared.js';
 
     const technicianName = 'J. Delgado';
-    const priorityOrder = {High: 0, Medium: 1, Low: 2};
+    const priorityOrder: Record<string, number> = {High: 0, Medium: 1, Low: 2};
 
-    let tickets = $state([]);
+    let tickets = $state<Ticket[]>([]);
     let loading = $state(true);
     let error = $state('');
 
@@ -35,8 +36,8 @@
     let workQueue = $derived(
         [...active]
             .sort((a, b) =>
-            (priorityOrder[a.priority] ?? 3) -
-            (priorityOrder[b.priority] ?? 3)
+            (priorityOrder[a.priority ?? ''] ?? 3) -
+            (priorityOrder[b.priority ?? ''] ?? 3)
         )
         .slice(0, 4)
     );
@@ -57,8 +58,8 @@
     }
   });
 
-  function statusColors(status) {
-    return STATUS_COLOR[status] || STATUS_COLOR.Open;
+  function statusColors(status: string) {
+    return STATUS_COLOR[status as keyof typeof STATUS_COLOR] || STATUS_COLOR.Open;
   }
 </script>
 
@@ -109,7 +110,7 @@
       <section class="dashboard-panel" aria-labelledby="queue-title">
         <div class="section-heading">
           <h2 id="queue-title" class="section-title">Your work queue</h2>
-          <a class="section-link" href="/technician/assigned">View all</a>
+          <a class="section-link" href={resolve('/technician/assigned')}>View all</a>
         </div>
 
         <p class="panel-description secondary-text">
@@ -120,7 +121,7 @@
           <a
             class="ticket-row"
             style:border-left={'4px solid ' + statusColors(ticket.status)[0]}
-            href={'/technician/tickets/' + encodeURIComponent(ticket.id)}
+            href={resolve('/technician/tickets/[id]', { id: ticket.id })}
           >
             <div class="top">
               <span class="ticket-id">{ticket.id}</span>
@@ -158,13 +159,13 @@
       <section class="dashboard-panel" aria-labelledby="completed-title">
         <div class="section-heading">
           <h2 id="completed-title" class="section-title">Recently resolved</h2>
-          <a class="section-link" href="/technician/completed">View all</a>
+          <a class="section-link" href={resolve('/technician/completed')}>View all</a>
         </div>
 
         {#each recentlyCompleted as ticket (ticket.id)}
           <a
             class="completed-item"
-            href={'/technician/tickets/' + encodeURIComponent(ticket.id)}
+            href={resolve('/technician/tickets/[id]', { id: ticket.id })}
           >
             <span class="ticket-id">{ticket.id}</span>
             <div class="ticket-title">{ticket.title}</div>
