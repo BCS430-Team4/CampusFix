@@ -30,7 +30,7 @@
                 href={resolve('/admin/profile')}
                 aria-label="Open administrator profile"
             >   
-                JD
+                AD
             </a>
         </div>
     </div>
