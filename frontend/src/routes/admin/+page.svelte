@@ -103,17 +103,23 @@
 
 <main class="content">
 
-  <!-- Dashboard Heading -->
-  <div class="dashboard-heading">
-    <div>
-      <h1 class="headline">Administrator dashboard</h1>
-      <p class="secondary-text">
-        Manage campus maintenance requests and monitor ticket activity.
-      </p>
-    </div>
+<!-- Dashboard Heading -->
+<div class="dashboard-heading">
+  <div>
+    <h1 class="headline">Administrator dashboard</h1>
 
-    <span class="workspace-label">Administrator workspace</span>
+    <p class="secondary-text">
+      Manage campus maintenance requests and monitor ticket activity.
+    </p>
   </div>
+
+  <a
+    class="btn-primary create-ticket-btn"
+    href={resolve('/admin/create-ticket')}
+  >
+    + Create Ticket
+  </a>
+</div>
 
   {#if loading}
     <div class="empty-state" role="status">
@@ -353,13 +359,36 @@
 </main>
 
 <style>
-  .dashboard-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 22px;
-  }
+.dashboard-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.dashboard-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.create-ticket-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: auto;
+  min-width: 140px;
+  flex: 0 0 auto;
+
+  padding: 12px 18px;
+  border-radius: 8px;
+
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
 
   h1 {
     margin: 0;

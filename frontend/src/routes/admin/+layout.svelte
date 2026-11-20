@@ -8,6 +8,7 @@
     const tabs = [
       ['/admin', 'Dashboard'],
       ['/admin/assigned', 'Assigned Tickets'],
+      ['/admin/technicians', 'Technicians'],
       ['/admin/completed', 'Completed Tickets']  
     ] as const;
 
