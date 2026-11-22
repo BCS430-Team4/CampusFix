@@ -1,5 +1,6 @@
 
 <script lang="ts">
+  import { enterDemoRole } from '$lib/demo-session';
   import { onMount } from 'svelte';
   import { CampusFixAPI, type Ticket } from '$lib/api';
 
@@ -178,8 +179,7 @@
     <h2 class="section-title">Account management</h2>
 
     <p class="secondary-text account-note">
-      Profile editing and sign-out will be available
-      after authentication is integrated.
+      Profile editing will be available after authentication is integrated.
     </p>
 
     <button
@@ -193,7 +193,7 @@
     <button
       class="btn-text-danger"
       type="button"
-      disabled
+      onclick={() => enterDemoRole(null)}
     >
       Log Out
     </button>

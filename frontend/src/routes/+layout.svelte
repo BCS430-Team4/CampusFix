@@ -2,7 +2,9 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount, setContext } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
+	import { readDemoRole } from '$lib/demo-session';
+	import { workspaceRole } from '$lib/demo-access';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Topbar from '$lib/components/Topbar.svelte';
@@ -19,13 +21,8 @@
 	let secondary = $derived(
 		page.url.pathname === '/report' || page.url.pathname.startsWith('/tickets/')
 	);
-	let staffView = $derived(
-		['/admin', '/technician'].some(
-			(path) => page.url.pathname === path || page.url.pathname.startsWith(path + '/')
-		)
-	);
-	let isAuthPage = $derived(
-		['/', '/login', '/signup', '/request-access'].includes(page.url.pathname)
+	let studentView = $derived(
+		workspaceRole(page.route.id) === 'Student' && page.data.role === 'Student'
 	);
 
 	function notify(text: string) {
@@ -37,26 +34,14 @@
 	setContext('notify', notify);
 
 	onMount(() => {
-		const hash = location.hash.slice(1);
-		if (hash.startsWith('/')) {
-			const [path, query = ''] = hash.split('?');
-			const params = new URLSearchParams(query);
-			const routes = {
-				'/dashboard': '/student',
-				'/my-tickets': '/my-tickets',
-				'/report': '/report',
-				'/profile': '/profile',
-				'/map': '/map'
-			} as const;
-			const ticketId = params.get('id');
-			const target = routes[path as keyof typeof routes];
-			if (path === '/ticket' && ticketId) {
-				goto(resolve('/tickets/[id]', { id: ticketId }), { replaceState: true });
-			} else if (target) {
-				goto(resolve(target), { replaceState: true });
-			}
+		function restoreSession(event: PageTransitionEvent) {
+			if (event.persisted && readDemoRole() !== page.data.role) void invalidateAll();
 		}
-		return () => clearTimeout(timer);
+		window.addEventListener('pageshow', restoreSession);
+		return () => {
+			window.removeEventListener('pageshow', restoreSession);
+			clearTimeout(timer);
+		};
 	});
 </script>
 
@@ -64,7 +49,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{#if staffView || isAuthPage}
+{#if !studentView}
 	{@render children()}
 {:else}
 	<div class="app student-app">

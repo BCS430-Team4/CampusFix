@@ -1,27 +1,35 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { CampusFixAPI } from '$lib/api.js';
+	import { resolve } from '$app/paths';
+	import {
+		CampusFixAPI,
+		DEMO_TECHNICIAN as technicianName,
+		isOpenUnassigned,
+		type Ticket
+	} from '$lib/api';
+	import type { LayerGroup, Map as LeafletMap } from 'leaflet';
 	import { CAMPUS_BUILDINGS, CAMPUS_BOUNDS } from '$lib/campus.js';
-    import { STATUS_COLOR } from '$lib/shared.js';
+	import { STATUS_COLOR } from '$lib/shared.js';
 	import 'leaflet/dist/leaflet.css';
 
-	const technicianName = 'J. Delgado';
 	const activeStatuses = new Set(['Open', 'Assigned', 'In progress']);
 
 	let mapElement: HTMLDivElement;
-	let leaflet: any;
-	let map: any;
-	let markerLayer: any;
+	let leaflet: typeof import('leaflet');
+	let map: LeafletMap;
+	let markerLayer: LayerGroup;
 
-	let tickets = $state<any[]>([]);
+	let tickets = $state<Ticket[]>([]);
 	let viewMode = $state<'mine' | 'all'>('mine');
 	let selectedBuilding = $state('');
 	let loading = $state(true);
 	let error = $state('');
-	let busyTicketId = $state<string | number | null>(null);
+	let busyTicketId = $state<string | null>(null);
 
 	function normalize(value: unknown) {
-		return String(value ?? '').trim().toLowerCase();
+		return String(value ?? '')
+			.trim()
+			.toLowerCase();
 	}
 
 	function getVisibleTickets() {
@@ -55,17 +63,7 @@
 		try {
 			error = '';
 
-			const result = await CampusFixAPI.getTickets();
-
-			if (Array.isArray(result)) {
-				tickets = result;
-			} else if (Array.isArray(result?.tickets)) {
-				tickets = result.tickets;
-			} else if (Array.isArray(result?.data)) {
-				tickets = result.data;
-			} else {
-				tickets = [];
-			}
+			tickets = await CampusFixAPI.getTickets();
 
 			drawMarkers();
 		} catch (err) {
@@ -118,12 +116,14 @@
 		drawMarkers();
 	}
 
-	async function claimTicket(ticket: any) {
+	async function claimTicket(ticket: Ticket) {
+		if (busyTicketId || !isOpenUnassigned(ticket)) return;
 		try {
 			busyTicketId = ticket.id;
 			error = '';
-			await CampusFixAPI.claimTicket(ticket.id, technicianName);
+			const latest = await CampusFixAPI.claimTicket(ticket.id);
 			await loadTickets();
+			if (latest?.technician !== technicianName) error = 'This ticket is no longer available.';
 		} catch (err) {
 			console.error('Could not claim ticket:', err);
 			error = 'Could not claim this ticket. Please try again.';
@@ -132,11 +132,18 @@
 		}
 	}
 
-	async function unclaimTicket(ticket: any) {
+	async function unclaimTicket(ticket: Ticket) {
+		if (busyTicketId) return;
 		try {
 			busyTicketId = ticket.id;
 			error = '';
-			await CampusFixAPI.unclaimTicket(ticket.id, technicianName);
+			const latest = await CampusFixAPI.getTicket(ticket.id);
+			if (latest?.technician !== technicianName || latest.status !== 'Assigned') {
+				await loadTickets();
+				error = 'This assignment has changed.';
+				return;
+			}
+			await CampusFixAPI.updateTicket(ticket.id, { technician: null, status: 'Open' });
 			await loadTickets();
 		} catch (err) {
 			console.error('Could not unclaim ticket:', err);
@@ -146,33 +153,39 @@
 		}
 	}
 
-	onMount(async () => {
-		await loadTickets();
+	onMount(() => {
+		let active = true;
+		void loadTickets();
 
-		try {
-			leaflet = await import('leaflet');
+		async function initializeMap() {
+			try {
+				leaflet = await import('leaflet');
+				if (!active) return;
 
-			map = leaflet
-				.map(mapElement, {
-					scrollWheelZoom: true
-				})
-				.fitBounds(CAMPUS_BOUNDS);
+				map = leaflet
+					.map(mapElement, {
+						scrollWheelZoom: true
+					})
+					.fitBounds(CAMPUS_BOUNDS);
 
-			leaflet
-				.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-					attribution: '&copy; OpenStreetMap contributors',
-					maxZoom: 19
-				})
-				.addTo(map);
+				leaflet
+					.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+						attribution: '&copy; OpenStreetMap contributors',
+						maxZoom: 19
+					})
+					.addTo(map);
 
-			markerLayer = leaflet.layerGroup().addTo(map);
-			drawMarkers();
-		} catch (err) {
-			console.error('Could not load the map:', err);
-			error = 'Could not load the campus map.';
+				markerLayer = leaflet.layerGroup().addTo(map);
+				drawMarkers();
+			} catch (err) {
+				console.error('Could not load the map:', err);
+				error = 'Could not load the campus map.';
+			}
 		}
 
+		void initializeMap();
 		return () => {
+			active = false;
 			map?.remove();
 		};
 	});
@@ -181,6 +194,16 @@
 <svelte:head>
 	<title>Technician Map | CampusFix</title>
 </svelte:head>
+
+{#snippet ticketTitle(ticket: Ticket)}
+	<h3>
+		{#if ticket.technician === technicianName || isOpenUnassigned(ticket)}
+			<a href={resolve('/technician/tickets/[id]', { id: ticket.id })}>{ticket.title}</a>
+		{:else}
+			{ticket.title}
+		{/if}
+	</h3>
+{/snippet}
 
 <section class="page">
 	<header class="page-header">
@@ -272,12 +295,14 @@
 								<div class="ticket-top">
 									<div>
 										<p class="ticket-id">Ticket #{ticket.id}</p>
-										<h3>{ticket.title}</h3>
+										{@render ticketTitle(ticket)}
 									</div>
 
 									<span
 										class="status"
-										style={`--status-color: ${STATUS_COLOR[ticket.status] ?? '#64748b'}`}
+										style:--status-color={STATUS_COLOR[
+											ticket.status as keyof typeof STATUS_COLOR
+										]?.[0] ?? '#64748b'}
 									>
 										{ticket.status}
 									</span>
@@ -285,7 +310,8 @@
 
 								<p class="ticket-meta">
 									{ticket.category ?? 'General'}
-									{#if ticket.room} · Room {ticket.room}{/if}
+									{#if ticket.room}
+										· Room {ticket.room}{/if}
 								</p>
 
 								{#if ticket.priority}
@@ -296,20 +322,18 @@
 									<p class="ticket-meta">Assigned to: {ticket.technician}</p>
 								{/if}
 
-								{#if !ticket.technician && ticket.status === 'Open'}
+								{#if isOpenUnassigned(ticket)}
 									<button
 										class="action-button"
-										disabled={busyTicketId === ticket.id}
+										disabled={busyTicketId !== null}
 										onclick={() => claimTicket(ticket)}
 									>
 										{busyTicketId === ticket.id ? 'Claiming…' : 'Claim ticket'}
 									</button>
-								{:else if
-									normalize(ticket.technician) === normalize(technicianName) &&
-									ticket.status === 'Assigned'}
+								{:else if ticket.technician === technicianName && ticket.status === 'Assigned'}
 									<button
 										class="action-button secondary"
-										disabled={busyTicketId === ticket.id}
+										disabled={busyTicketId !== null}
 										onclick={() => unclaimTicket(ticket)}
 									>
 										{busyTicketId === ticket.id ? 'Unclaiming…' : 'Unclaim ticket'}
@@ -333,9 +357,7 @@
 	{#if getUnmappedTickets().length > 0}
 		<section class="unmapped">
 			<h2>Tickets without a mapped building</h2>
-			<p>
-				These active tickets have a building name that is not listed in the campus map data.
-			</p>
+			<p>These active tickets have a building name that is not listed in the campus map data.</p>
 
 			<div class="ticket-list">
 				{#each getUnmappedTickets() as ticket (ticket.id)}
@@ -343,20 +365,21 @@
 						<div class="ticket-top">
 							<div>
 								<p class="ticket-id">Ticket #{ticket.id}</p>
-								<h3>{ticket.title}</h3>
+								{@render ticketTitle(ticket)}
 							</div>
 							<span class="status">{ticket.status}</span>
 						</div>
 
 						<p class="ticket-meta">
 							Building: {ticket.building || 'Not provided'}
-							{#if ticket.room} · Room {ticket.room}{/if}
+							{#if ticket.room}
+								· Room {ticket.room}{/if}
 						</p>
 
-						{#if !ticket.technician && ticket.status === 'Open'}
+						{#if isOpenUnassigned(ticket)}
 							<button
 								class="action-button"
-								disabled={busyTicketId === ticket.id}
+								disabled={busyTicketId !== null}
 								onclick={() => claimTicket(ticket)}
 							>
 								{busyTicketId === ticket.id ? 'Claiming…' : 'Claim ticket'}

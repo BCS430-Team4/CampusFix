@@ -31,6 +31,14 @@ export interface Ticket {
 }
 
 type ServerTicket = Omit<Ticket, 'location' | 'completionNotes'>;
+
+/** The current technician in the demo role selector. */
+export const DEMO_TECHNICIAN = 'J. Delgado';
+
+export function isOpenUnassigned(ticket: Pick<Ticket, 'status' | 'technician'>): boolean {
+	return ticket.status === 'Open' && !ticket.technician?.trim();
+}
+
 const updateFields = [
 	'title',
 	'category',
@@ -225,6 +233,12 @@ export const CampusFixAPI = {
 			writePins(pins);
 		}
 		return decorate(ticket);
+	},
+	async claimTicket(id: string): Promise<Ticket | null> {
+		// Recheck stale lists. The current PATCH endpoint has no atomic claim condition.
+		const latest = await CampusFixAPI.getTicket(id);
+		if (!latest || !isOpenUnassigned(latest)) return latest;
+		return CampusFixAPI.updateTicket(id, { technician: DEMO_TECHNICIAN, status: 'Assigned' });
 	},
 	async deleteTicket(id: string): Promise<void> {
 		await apiFetch<void>(buildRoute(TICKET_BY_ID_ROUTE, { id }), { method: 'DELETE' });

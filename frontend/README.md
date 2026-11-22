@@ -57,7 +57,7 @@ Map coordinates are not supported by the backend yet. Pins are intentionally sav
 
 ## Account integration and backend coordination
 
-Signup and login are still demo navigation: Student opens `/student`, Technician `/technician`, and Admin `/admin`. Any field contents, including blank credentials, short passwords, and mismatched confirmations, are accepted. These handlers do not read, store, or transmit credentials, create accounts, or establish authenticated sessions. Names remain placeholders. The dropdown does not enforce server authorization.
+Signup and login select a demo workspace. Student opens `/student`, Technician opens `/technician`, and Admin opens `/admin`. Only the role is stored for the current browser tab. A refresh keeps the selection. Opening another role's screen returns the user to their dashboard, and opening a workspace without a role leads to login. Use **Log out** on any role's profile to select another role. Demo credentials can be left blank. Production authorization still requires the backend to verify the user's identity and role on API requests.
 
 Notify the backend engineer about the remaining contracts before enabling them: ticket latitude/longitude and `isApproximate`, image uploads, dedicated completion notes/timestamps, comment IDs in comment responses, and authenticated user identity/role authorization. Current comment responses omit numeric IDs, so editing/deleting comments by ID is not exposed in this UI. Keep future generated API integration in or re-exported by `$lib/api.ts`.
 
@@ -68,6 +68,12 @@ No backend implementation is changed by this frontend integration. The static ad
 Administrator ticket links open `/admin/tickets/[id]` and retain the admin navigation. The detail page saves technician assignment and Low/Medium/High urgency through `PATCH /api/tickets/{id}` using the existing `technician`, `priority`, and `status` fields. Assigning an open ticket changes its status to Assigned; unassigning an Assigned ticket returns it to Open. Reassigning an in-progress repair preserves its progress. Finished tickets show their saved assignment, comments, and repair notes as history.
 
 J. Delgado is a typed demo selection, matching the technician dashboard. Saving an assignment stores that name on the database ticket. No separate technician account is created: the current API does not expose a technician directory or technician-account creation. Notify the backend engineer that a directory with stable technician identities is needed to replace this demo option.
+
+## Technician self-assignment
+
+The technician dashboard lists open, unassigned tickets. Open one and choose **Manage repair → Assign to me** to claim it as the current demo technician, J. Delgado. The map uses the same availability check. Both views read the latest ticket before saving its technician and status.
+
+Backend handoff: please notify the backend engineer that multi-user use requires an authenticated self-claim operation. It must use the caller's technician identity, accept only a still-open and unassigned ticket in one atomic update, and report a conflict if someone else claims it first. The current general ticket PATCH cannot guarantee this across concurrent clients or enforce technician permissions.
 
 ## Campus map
 

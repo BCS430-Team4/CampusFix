@@ -49,4 +49,6 @@
     {/each}
 </nav>
 
-{@render children()}
+{#key page.params.id}
+    {@render children()}
+{/key}

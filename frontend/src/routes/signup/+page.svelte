@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { DEMO_ROLES, DEMO_DASHBOARDS, type DemoRole } from '$lib/demo-access';
+  import { DEMO_ROLES, type DemoRole } from '$lib/demo-access';
+  import { enterDemoRole } from '$lib/demo-session';
 
   let role = $state<DemoRole>('Student');
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    void goto(resolve(DEMO_DASHBOARDS[role]));
+    void enterDemoRole(role);
   }
 </script>
 
