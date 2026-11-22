@@ -1,15 +1,15 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { resolve } from '$app/paths';
-    import { CampusFixAPI, type Ticket } from '$lib/api';
+    import { CampusFixAPI, DEMO_TECHNICIAN as technicianName, isOpenUnassigned, type Ticket } from '$lib/api';
     import { STATUS_COLOR } from '$lib/shared.js';
 
-    const technicianName = 'J. Delgado';
     const priorityOrder: Record<string, number> = {High: 0, Medium: 1, Low: 2};
 
     let tickets = $state<Ticket[]>([]);
     let loading = $state(true);
     let error = $state('');
+    let available = $derived(tickets.filter(isOpenUnassigned));
 
     let assigned = $derived(
         tickets.filter(ticket => ticket.technician === technicianName)
@@ -67,6 +67,28 @@
   <title>Technician Dashboard | CampusFix</title>
 </svelte:head>
 
+{#snippet ticketCard(ticket: Ticket)}
+  {@const color = statusColors(ticket.status)[0]}
+  <a
+    class="ticket-row"
+    style:border-left={'4px solid ' + color}
+    href={resolve('/technician/tickets/[id]', { id: ticket.id })}
+  >
+    <div class="top">
+      <span class="ticket-id">{ticket.id}</span>
+      <span class="status-tag" style:color>{ticket.status}</span>
+    </div>
+    <div class="ticket-title queue-title">{ticket.title}</div>
+    <div class="ticket-meta">{ticket.building} · {ticket.room}</div>
+    <div class="queue-footer">
+      <span class="secondary-text">{ticket.category}</span>
+      <span class="priority-label" class:high={ticket.priority === 'High'}>
+        {ticket.priority ? `${ticket.priority} priority` : 'Not prioritized'}
+      </span>
+    </div>
+  </a>
+{/snippet}
+
 <main class="content">
   <div class="dashboard-heading">
     <div>
@@ -118,41 +140,20 @@
         </p>
 
         {#each workQueue as ticket (ticket.id)}
-          <a
-            class="ticket-row"
-            style:border-left={'4px solid ' + statusColors(ticket.status)[0]}
-            href={resolve('/technician/tickets/[id]', { id: ticket.id })}
-          >
-            <div class="top">
-              <span class="ticket-id">{ticket.id}</span>
-              <span
-                class="status-tag"
-                style:color={statusColors(ticket.status)[0]}
-              >
-                {ticket.status}
-              </span>
-            </div>
-
-            <div class="ticket-title queue-title">{ticket.title}</div>
-
-            <div class="ticket-meta">
-              {ticket.building} · {ticket.room}
-            </div>
-
-            <div class="queue-footer">
-              <span class="secondary-text">{ticket.category}</span>
-              <span
-                class="priority-label"
-                class:high={ticket.priority === 'High'}
-              >
-                {ticket.priority
-                  ? `${ticket.priority} priority`
-                  : 'Not prioritized'}
-              </span>
-            </div>
-          </a>
+          {@render ticketCard(ticket)}
         {:else}
           <div class="empty-state">You have no active assignments.</div>
+        {/each}
+      </section>
+
+      <section class="dashboard-panel" aria-labelledby="available-title">
+        <div class="section-heading">
+          <h2 id="available-title" class="section-title">Open unassigned tickets</h2>
+        </div>
+        {#each available as ticket (ticket.id)}
+          {@render ticketCard(ticket)}
+        {:else}
+          <div class="empty-state">No open tickets are waiting for a technician.</div>
         {/each}
       </section>
 

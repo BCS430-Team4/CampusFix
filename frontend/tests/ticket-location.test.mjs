@@ -178,3 +178,30 @@ test('technician comments use their endpoint and saved repair notes are availabl
 	assert.equal(result.completionNotes, 'Replaced the bulb');
 	assert.equal(result.completedAt, undefined, 'Do not invent a server completion timestamp');
 });
+
+test('self-claim rechecks availability and changes only the technician and status', async () => {
+	respond(ticket({ technician: '' }));
+	respond(ticket({ status: 'Assigned', technician: 'J. Delgado' }));
+	const saved = await CampusFixAPI.claimTicket('CF-1043');
+	assert.equal(saved.technician, 'J. Delgado');
+	assert.deepEqual(
+		requests.map(({ method }) => method),
+		['GET', 'PATCH']
+	);
+	assert.deepEqual(requests[1].body, { technician: 'J. Delgado', status: 'Assigned' });
+});
+
+test('self-claim skips the write if another technician, a status change, or deletion took the ticket out of the queue', async () => {
+	for (const latest of [
+		ticket({ technician: 'M. Torres' }),
+		ticket({ status: 'Assigned' }),
+		ticket({ status: 'In progress' }),
+		ticket({ status: 'Resolved' }),
+		ticket({ status: 'Closed' }),
+		null
+	]) {
+		respond(latest, latest ? 200 : 404);
+		await CampusFixAPI.claimTicket('CF-1043');
+	}
+	assert.ok(requests.every(({ method }) => method === 'GET'));
+});

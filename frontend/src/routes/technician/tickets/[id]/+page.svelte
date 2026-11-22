@@ -2,10 +2,14 @@
 	import { getContext, onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { CampusFixAPI, type Ticket } from '$lib/api';
+	import {
+		CampusFixAPI,
+		DEMO_TECHNICIAN as technicianName,
+		isOpenUnassigned,
+		type Ticket
+	} from '$lib/api';
 	import { STATUS_COLOR } from '$lib/shared.js';
 
-	const technicianName = 'J. Delgado';
 	const notify = getContext<(text: string) => void>('notify');
 
 	let ticket = $state<Ticket | null>(null);
@@ -21,28 +25,49 @@
 	let resolving = $state(false);
 
 	let finished = $derived(ticket?.status === 'Resolved' || ticket?.status === 'Closed');
+	let available = $derived(ticket !== null && isOpenUnassigned(ticket));
 
 	let colors = $derived(
 		STATUS_COLOR[(ticket?.status ?? 'Open') as keyof typeof STATUS_COLOR] || STATUS_COLOR.Open
 	);
 
+	function showTicket(found: Ticket | null) {
+		if (!found || (found.technician !== technicianName && !isOpenUnassigned(found))) {
+			ticket = null;
+			error = 'This ticket is no longer available to you.';
+			return;
+		}
+		ticket = found;
+		status = found.status;
+		priority = found.priority || '';
+	}
+
 	onMount(async () => {
 		try {
-			const found = await CampusFixAPI.getTicket(page.params.id ?? '');
-
-			if (!found || found.technician !== technicianName) {
-				error = 'This ticket was not found or is not assigned to you.';
-			} else {
-				ticket = found;
-				status = found.status;
-				priority = found.priority || '';
-			}
+			showTicket(await CampusFixAPI.getTicket(page.params.id ?? ''));
 		} catch {
 			error = 'Unable to load this ticket. Please refresh and try again.';
 		} finally {
 			loading = false;
 		}
 	});
+
+	async function claimTicket() {
+		if (!ticket || !available || busy) return;
+		const id = ticket.id;
+		actionError = '';
+		busy = true;
+		try {
+			const latest = await CampusFixAPI.claimTicket(id);
+			if (page.params.id !== id) return;
+			showTicket(latest);
+			if (latest?.technician === technicianName) notify('Assigned to you');
+		} catch {
+			actionError = 'Unable to claim this ticket. Please try again.';
+		} finally {
+			busy = false;
+		}
+	}
 
 	async function currentTicket() {
 		const current = await CampusFixAPI.getTicket(page.params.id ?? '');
@@ -185,7 +210,7 @@
 </svelte:head>
 
 <main class="content">
-	<a class="back-link" href={resolve('/technician/assigned')}> ← Back to assigned tickets </a>
+	<a class="back-link" href={resolve('/technician')}>← Technician dashboard</a>
 
 	{#if loading}
 		<div class="empty-state" role="status">Loading ticket…</div>
@@ -229,11 +254,6 @@
 					</div>
 
 					<div>
-						<div class="k">Assigned technician</div>
-						<div class="v">{ticket.technician}</div>
-					</div>
-
-					<div>
 						<div class="k">Associated asset</div>
 						<div class="v">{ticket.asset || 'No asset linked'}</div>
 					</div>
@@ -265,7 +285,15 @@
 			<section class="panel" aria-labelledby="update-title">
 				<h2 id="update-title" class="section-title">Manage repair</h2>
 
-				{#if finished}
+				<dl class="field-block technician-field">
+					<dt>Technician</dt>
+					<dd>{available ? 'Unassigned' : technicianName + ' (you)'}</dd>
+				</dl>
+				{#if available}
+					<button class="btn-primary" type="button" disabled={busy} onclick={claimTicket}>
+						{busy ? 'Claiming…' : 'Assign to me'}
+					</button>
+				{:else if finished}
 					<div class="notice-box">
 						This ticket is {ticket.status.toLowerCase()}. You can still add a follow-up comment
 						below.
@@ -355,20 +383,22 @@
 				<div class="empty-state">No comments yet.</div>
 			{/each}
 
-			<form class="comment-form" onsubmit={postComment}>
-				<label class="field-label" for="repair-comment">Add an update</label>
+			{#if !available}
+				<form class="comment-form" onsubmit={postComment}>
+					<label class="field-label" for="repair-comment">Add an update</label>
 
-				<textarea
-					id="repair-comment"
-					rows="3"
-					placeholder="Share progress or ask for additional information."
-					bind:value={comment}
-					required></textarea>
+					<textarea
+						id="repair-comment"
+						rows="3"
+						placeholder="Share progress or ask for additional information."
+						bind:value={comment}
+						required></textarea>
 
-				<button class="btn-primary post-button" type="submit" disabled={busy}>
-					Post comment
-				</button>
-			</form>
+					<button class="btn-primary post-button" type="submit" disabled={busy}>
+						Post comment
+					</button>
+				</form>
+			{/if}
 		</section>
 	{/if}
 </main>
@@ -438,6 +468,15 @@
 		margin-top: 18px;
 		padding-top: 18px;
 		border-top: 1px solid var(--border);
+	}
+
+	.technician-field dt {
+		font-size: 13px;
+		font-weight: 600;
+	}
+	.technician-field dd {
+		margin: 6px 0 0;
+		font-size: 14px;
 	}
 
 	.cancel-button {

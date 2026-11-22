@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { enterDemoRole } from '$lib/demo-session';
 	import { CampusFixAPI, type Ticket } from '$lib/api';
 
 	const technicianName = 'J. Delgado';
@@ -68,6 +69,7 @@
 		<a href={resolve('/technician/assigned')}>View assigned tickets</a>
 		<a href={resolve('/technician/completed')}>View completed tickets</a>
 	</nav>
+	<button class="btn-text-danger" type="button" onclick={() => enterDemoRole(null)}>Log out</button>
 </main>
 
 <style>

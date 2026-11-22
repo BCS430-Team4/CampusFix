@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { CampusFixAPI, type Ticket } from '../api';
 	import { onMount } from 'svelte';
+	import { enterDemoRole } from '$lib/demo-session';
 	let { notify }: { notify: (text: string) => void } = $props();
 	let tickets = $state<Ticket[]>([]);
 	let loading = $state(true);
@@ -56,6 +57,4 @@
 	style="margin-bottom:8px;"
 	onclick={() => notify('Not wired to a backend in this preview')}>Edit profile</button
 >
-<button class="btn-text-danger" onclick={() => notify('There is no login in this preview yet')}
-	>Log out</button
->
+<button class="btn-text-danger" type="button" onclick={() => enterDemoRole(null)}>Log out</button>
