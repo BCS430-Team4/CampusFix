@@ -15,7 +15,11 @@
 	let loadError = $state('');
 	let saveError = $state('');
 	let savedMessage = $state('');
-	let busy = $state(false);
+	let pending = $state<'assignment' | 'close' | 'comment' | null>(null);
+	let busy = $derived(pending !== null);
+	let commentDraft = $state('');
+	let commentError = $state('');
+	let commentMessage = $state('');
 	let reloadCount = $state(0);
 	let technician = $state('');
 	let urgency = $state('');
@@ -39,7 +43,10 @@
 		let active = true;
 		ticket = null;
 		loading = true;
-		busy = false;
+		pending = null;
+		commentDraft = '';
+		commentError = '';
+		commentMessage = '';
 		loadError = '';
 		saveError = '';
 		savedMessage = '';
@@ -71,7 +78,7 @@
 		const changes: AdminTicketChanges = {};
 		if (technician !== (ticket.technician || '')) changes.technician = technician || null;
 		if (urgency !== (ticket.priority || '')) changes.priority = urgency || null;
-		busy = true;
+		pending = 'assignment';
 		saveError = '';
 		savedMessage = '';
 
@@ -103,7 +110,65 @@
 					? error.message
 					: 'Unable to save changes. Your selections are still here; please try again.';
 		} finally {
-			if (page.params.id === id) busy = false;
+			if (page.params.id === id) pending = null;
+		}
+	}
+
+	async function closeTicket() {
+		if (!ticket || busy || ticket.status === 'Closed') return;
+		const id = ticket.id;
+		const question = hasChanges
+			? `Close ${id} and discard unsaved assignment and urgency changes?`
+			: `Close ticket ${id}?`;
+		if (!window.confirm(question)) return;
+		pending = 'close';
+		savedMessage = '';
+		saveError = '';
+		try {
+			const closed = await CampusFixAPI.updateTicket(id, { status: 'Closed' });
+			if (page.params.id !== id) return;
+			if (closed) {
+				showTicket(closed);
+				savedMessage = 'Ticket closed.';
+			} else {
+				ticket = null;
+			}
+		} catch {
+			if (page.params.id === id) saveError = 'Unable to close this ticket. Please try again.';
+		} finally {
+			if (page.params.id === id) pending = null;
+		}
+	}
+
+	async function postComment(event: SubmitEvent) {
+		event.preventDefault();
+		const body = commentDraft.trim();
+		if (!ticket || busy || !body) return;
+		const id = ticket.id;
+		const editedTechnician = technician !== (ticket.technician || '');
+		const editedUrgency = urgency !== (ticket.priority || '');
+		pending = 'comment';
+		commentError = '';
+		commentMessage = '';
+		try {
+			const updated = await CampusFixAPI.addComment(
+				id,
+				body,
+				'Campus Administrator',
+				'Administrator'
+			);
+			if (page.params.id !== id) return;
+			ticket = updated;
+			if (updated) {
+				if (!editedTechnician || finished) technician = updated.technician || '';
+				if (!editedUrgency || finished) urgency = updated.priority || '';
+				commentDraft = '';
+				commentMessage = 'Comment posted.';
+			}
+		} catch {
+			if (page.params.id === id) commentError = 'Unable to post your comment. Please try again.';
+		} finally {
+			if (page.params.id === id) pending = null;
 		}
 	}
 </script>
@@ -237,7 +302,7 @@
 					{#if savedMessage}<p class="save-confirmation" role="status">{savedMessage}</p>{/if}
 					{#if !finished}
 						<button class="btn-primary" type="submit" disabled={busy || !hasChanges}
-							>{busy ? 'Saving…' : 'Save changes'}</button
+							>{pending === 'assignment' ? 'Saving…' : 'Save changes'}</button
 						>
 						<button
 							class="btn-secondary reset-button"
@@ -247,6 +312,16 @@
 						>
 					{/if}
 				</form>
+				{#if ticket.status !== 'Closed'}
+					<button
+						class="btn-secondary close-button"
+						type="button"
+						disabled={busy}
+						onclick={closeTicket}
+					>
+						{pending === 'close' ? 'Closing…' : 'Close ticket'}
+					</button>
+				{/if}
 			</section>
 		</div>
 
@@ -262,6 +337,19 @@
 			{:else}
 				<p class="secondary-text">No comments or repair updates yet.</p>
 			{/each}
+			<form class="comment-form" onsubmit={postComment} aria-busy={pending === 'comment'}>
+				<label class="field-label" for="admin-comment">Add a comment</label>
+				<textarea
+					id="admin-comment"
+					rows="3"
+					bind:value={commentDraft}
+					disabled={pending === 'comment'}></textarea>
+				{#if commentError}<p class="action-error" role="alert">{commentError}</p>{/if}
+				{#if commentMessage}<p class="save-confirmation" role="status">{commentMessage}</p>{/if}
+				<button class="btn-primary" type="submit" disabled={busy || !commentDraft.trim()}>
+					{pending === 'comment' ? 'Posting…' : 'Post comment'}
+				</button>
+			</form>
 		</section>
 	{/if}
 </main>
@@ -385,6 +473,19 @@
 	}
 	.reset-button {
 		margin-top: 10px;
+	}
+	.close-button {
+		margin-top: 14px;
+		color: var(--danger);
+	}
+	.comment-form {
+		margin-top: 20px;
+		border-top: 1px solid var(--border);
+		padding-top: 16px;
+	}
+	.comment-form button {
+		margin-top: 10px;
+		width: auto;
 	}
 	.action-error,
 	.save-confirmation {
