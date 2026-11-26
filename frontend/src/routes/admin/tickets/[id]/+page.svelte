@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import TicketPhotos from '$lib/components/TicketPhotos.svelte';
 	import { resolve } from '$app/paths';
 	import { CampusFixAPI, type Ticket } from '$lib/api';
 	import {
@@ -236,6 +237,7 @@
 				</dl>
 				<h3 class="subheading">Description</h3>
 				<p class="description">{ticket.description || 'No description provided.'}</p>
+				<TicketPhotos {ticket} />
 				{#if ticket.location}
 					<div class="local-location">
 						<h3 class="subheading">Estimated map location</h3>

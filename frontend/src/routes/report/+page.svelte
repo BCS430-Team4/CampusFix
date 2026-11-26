@@ -2,11 +2,12 @@
 	import { getContext, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { CampusFixAPI } from '$lib/api';
+	import { CampusFixAPI, type Ticket } from '$lib/api';
 	import { BUILDINGS, CATEGORIES } from '$lib/shared.js';
 	import Topbar from '$lib/components/Topbar.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import LocationPicker from '$lib/components/LocationPicker.svelte';
+	import ReportPhotoPicker from '$lib/components/ReportPhotoPicker.svelte';
 	import type { CreateTicketInput, TicketLocation } from '$lib/types/ticket-location';
 
 	let category = $state('');
@@ -14,7 +15,9 @@
 	let description = $state('');
 	let building = $state('');
 	let room = $state('');
-	let photoCount = $state(0);
+	let photoFiles = $state.raw<File[]>([]);
+	let checkingPhotos = $state(false);
+	let createdTicket = $state.raw<Ticket | null>(null);
 	let errors = $state({ category: false, title: false });
 	let location = $state<TicketLocation | null>(null);
 	let showLocationPicker = $state(false);
@@ -31,7 +34,7 @@
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
-		if (submitting) return;
+		if (submitting || checkingPhotos) return;
 		submitError = '';
 		errors = { category: !category, title: !title.trim() };
 		if (errors.category || errors.title) return;
@@ -45,7 +48,19 @@
 		};
 		submitting = true;
 		try {
-			const ticket = await CampusFixAPI.addTicket(input);
+			const ticket = createdTicket ?? (await CampusFixAPI.addTicket(input));
+			createdTicket = ticket;
+			if (photoFiles.length) {
+				try {
+					await CampusFixAPI.saveTicketPhotos(ticket, photoFiles);
+				} catch {
+					submitError =
+						'Ticket ' +
+						ticket.id +
+						' was created. This browser could not save the photos. Retry or open the ticket without them.';
+					return;
+				}
+			}
 			await goto(resolve('/tickets/[id]', { id: ticket.id }));
 			notify(
 				location && !ticket.location
@@ -53,7 +68,9 @@
 					: 'Report submitted'
 			);
 		} catch {
-			submitError = 'Unable to submit your report. Your entries are still here; please try again.';
+			submitError = createdTicket
+				? 'Your report was saved. Open the ticket below.'
+				: 'Unable to submit your report. Your entries are still here. Please try again.';
 		} finally {
 			submitting = false;
 		}
@@ -65,120 +82,124 @@
 <Topbar title="Report an issue" />
 <main class="content">
 	<form onsubmit={submit} aria-busy={submitting} novalidate>
-		{#if submitError}<div class="notice-box" role="alert">{submitError}</div>{/if}
-		<fieldset class="category-field">
-			<legend class="field-label">Category</legend>
-			<div class="cat-grid">
-				{#each CATEGORIES as item (item.label)}
+		<fieldset class="report-details" disabled={submitting || !!createdTicket}>
+			<fieldset class="category-field">
+				<legend class="field-label">Category</legend>
+				<div class="cat-grid">
+					{#each CATEGORIES as item (item.label)}
+						<button
+							type="button"
+							class="cat-btn"
+							class:selected={category === item.label}
+							aria-pressed={category === item.label}
+							onclick={() => {
+								category = item.label;
+								errors.category = false;
+							}}
+						>
+							<Icon name={item.icon} size={22} /><span>{item.label}</span>
+						</button>
+					{/each}
+				</div>
+				{#if errors.category}<div class="field-error" role="alert">
+						Select a category first.
+					</div>{/if}
+			</fieldset>
+			<div class="field-block">
+				<label class="field-label" for="report-title">Title</label>
+				<input
+					id="report-title"
+					type="text"
+					placeholder="ex: Flickering lights in lab"
+					bind:value={title}
+					aria-invalid={errors.title}
+				/>
+				{#if errors.title}<div class="field-error" role="alert">Enter a short title.</div>{/if}
+			</div>
+			<div class="field-block">
+				<label class="field-label" for="report-description">Description</label>
+				<textarea
+					id="report-description"
+					rows="3"
+					placeholder="Describe what's wrong and where exactly to find it"
+					bind:value={description}></textarea>
+			</div>
+			<div class="location-fields">
+				<div>
+					<label class="field-label" for="report-building"
+						>Building <span class="optional">(optional)</span></label
+					><select id="report-building" aria-describedby="report-outdoor-help" bind:value={building}
+						><option value="">Select a building</option>{#each BUILDINGS as name (name)}<option
+								>{name}</option
+							>{/each}</select
+					>
+				</div>
+				<div>
+					<label class="field-label" for="report-room"
+						>Room / location <span class="optional">(optional)</span></label
+					><input
+						id="report-room"
+						type="text"
+						placeholder="ex: Room 204 or parking lot"
+						aria-describedby="report-outdoor-help"
+						bind:value={room}
+					/>
+				</div>
+				<p id="report-outdoor-help" class="outdoor-help">
+					For outdoor issues, leave Building blank and describe the spot or add a map pin.
+				</p>
+			</div>
+			<section class="map-location-field" aria-labelledby="report-map-label">
+				<h2 class="field-label" id="report-map-label">
+					Map location <span class="optional">(optional)</span>
+				</h2>
+				<p class="location-help">Help us find the issue. Your best estimate is fine.</p>
+				<p class="location-help">
+					Map pins are saved only in this browser and aren't shared with other devices yet.
+				</p>
+				{#if location}<p class="location-saved" role="status">
+						<Icon name="map-pin" size={18} /><span>Approximate location added</span>
+					</p>{/if}
+				<div class="location-actions">
 					<button
 						type="button"
-						class="cat-btn"
-						class:selected={category === item.label}
-						aria-pressed={category === item.label}
-						onclick={() => {
-							category = item.label;
-							errors.category = false;
-						}}
+						class="btn-secondary map-button"
+						bind:this={locationButton}
+						onclick={() => (showLocationPicker = true)}
+						aria-haspopup="dialog"
+						><Icon name="map-pin" size={18} />{location
+							? 'Change location'
+							: 'Choose on map'}</button
 					>
-						<Icon name={item.icon} size={22} /><span>{item.label}</span>
-					</button>
-				{/each}
-			</div>
-			{#if errors.category}<div class="field-error" role="alert">Select a category first.</div>{/if}
+					{#if location}<button
+							type="button"
+							class="remove-location"
+							onclick={() => {
+								location = null;
+								locationButton.focus();
+							}}>Remove location</button
+						>{/if}
+				</div>
+			</section>
 		</fieldset>
-		<div class="field-block">
-			<label class="field-label" for="report-title">Title</label>
-			<input
-				id="report-title"
-				type="text"
-				placeholder="ex: Flickering lights in lab"
-				bind:value={title}
-				aria-invalid={errors.title}
-			/>
-			{#if errors.title}<div class="field-error" role="alert">Enter a short title.</div>{/if}
-		</div>
-		<div class="field-block">
-			<label class="field-label" for="report-description">Description</label>
-			<textarea
-				id="report-description"
-				rows="3"
-				placeholder="Describe what's wrong and where exactly to find it"
-				bind:value={description}></textarea>
-		</div>
-		<div class="location-fields">
-			<div>
-				<label class="field-label" for="report-building"
-					>Building <span class="optional">(optional)</span></label
-				><select id="report-building" aria-describedby="report-outdoor-help" bind:value={building}
-					><option value="">Select a building</option>{#each BUILDINGS as name (name)}<option
-							>{name}</option
-						>{/each}</select
-				>
-			</div>
-			<div>
-				<label class="field-label" for="report-room"
-					>Room / location <span class="optional">(optional)</span></label
-				><input
-					id="report-room"
-					type="text"
-					placeholder="ex: Room 204 or parking lot"
-					aria-describedby="report-outdoor-help"
-					bind:value={room}
-				/>
-			</div>
-			<p id="report-outdoor-help" class="outdoor-help">
-				For outdoor issues, leave Building blank and describe the spot or add a map pin.
-			</p>
-		</div>
-		<section class="map-location-field" aria-labelledby="report-map-label">
-			<h2 class="field-label" id="report-map-label">
-				Map location <span class="optional">(optional)</span>
-			</h2>
-			<p class="location-help">Help us find the issue. Your best estimate is fine.</p>
-			<p class="location-help">
-				Map pins are saved only in this browser and aren't shared with other devices yet.
-			</p>
-			{#if location}<p class="location-saved" role="status">
-					<Icon name="map-pin" size={18} /><span>Approximate location added</span>
-				</p>{/if}
-			<div class="location-actions">
-				<button
-					type="button"
-					class="btn-secondary map-button"
-					bind:this={locationButton}
-					onclick={() => (showLocationPicker = true)}
-					aria-haspopup="dialog"
-					><Icon name="map-pin" size={18} />{location ? 'Change location' : 'Choose on map'}</button
-				>
-				{#if location}<button
-						type="button"
-						class="remove-location"
-						onclick={() => {
-							location = null;
-							locationButton.focus();
-						}}>Remove location</button
-					>{/if}
-			</div>
-		</section>
-		<label class="field-label" for="report-photos">Photos (optional)</label>
-		<label class="dropzone" for="report-photos">
-			<Icon name="camera" size={24} />
-			<span class="secondary-text" style="font-size:13px;"
-				>{photoCount
-					? photoCount + ' photo' + (photoCount > 1 ? 's' : '') + ' selected'
-					: 'Add photos to help the technician'}</span
-			>
-			<input
-				id="report-photos"
-				type="file"
-				accept="image/*"
-				multiple
-				onchange={(event) => (photoCount = event.currentTarget.files?.length ?? 0)}
-			/>
-		</label>
-		<button class="btn-primary" style="margin-top:20px;" type="submit" disabled={submitting}
-			>{submitting ? 'Submitting…' : 'Submit report'}</button
+		<ReportPhotoPicker
+			bind:files={photoFiles}
+			bind:checking={checkingPhotos}
+			disabled={submitting}
+		/>
+		{#if submitError}<div class="notice-box" role="alert">{submitError}</div>{/if}
+		<button
+			class="btn-primary"
+			style="margin-top:20px;"
+			type="submit"
+			disabled={submitting || checkingPhotos}
+			>{submitting ? 'Saving…' : createdTicket ? 'Retry save' : 'Submit report'}</button
 		>
+		{#if createdTicket && submitError}
+			<a class="ticket-link" href={resolve('/tickets/[id]', { id: createdTicket.id })}
+				>Open ticket {createdTicket.id}</a
+			>
+		{/if}
 	</form>
 </main>
 
@@ -195,6 +216,18 @@
 {/if}
 
 <style>
+	.report-details {
+		min-width: 0;
+		padding: 0;
+		margin: 0;
+		border: 0;
+	}
+	.ticket-link {
+		display: block;
+		margin-top: 12px;
+		color: var(--ink);
+		text-align: center;
+	}
 	.map-location-field {
 		margin-bottom: 22px;
 	}

@@ -57,6 +57,12 @@ Map coordinates are not supported by the backend yet. Pins are intentionally sav
 
 ## Account integration and backend coordination
 
+### Report photos
+
+Students can attach up to four JPEG, PNG, or WebP images of up to 5 MB each. The student receipt and the admin and technician ticket details show the same gallery below the description. Select a thumbnail to enlarge it. Previous, Next, and the arrow keys move through the images. Escape closes the viewer.
+
+This frontend preview stores the original files in IndexedDB on the browser profile and origin where the report was submitted. The ticket itself is saved through the existing API. For cross-device access, please notify the backend engineer that the frontend needs an authenticated multipart upload for a ticket and a way to list and retrieve its photos. Each attachment needs a stable ID, ticket ID, display filename, media type, and image content or authorized URL. Reads must follow ticket visibility, uploads must enforce type, size and count limits, and ticket deletion must remove its attachments.
+
 Signup and login select a demo workspace. Student opens `/student`, Technician opens `/technician`, and Admin opens `/admin`. Only the role is stored for the current browser tab. A refresh keeps the selection. Opening another role's screen returns the user to their dashboard, and opening a workspace without a role leads to login. Use **Log out** on any role's profile to select another role. Demo credentials can be left blank. Production authorization still requires the backend to verify the user's identity and role on API requests.
 
 Notify the backend engineer about the remaining contracts before enabling them: ticket latitude/longitude and `isApproximate`, image uploads, dedicated completion notes/timestamps, comment IDs in comment responses, and authenticated user identity/role authorization. Current comment responses omit numeric IDs, so editing/deleting comments by ID is not exposed in this UI. Keep future generated API integration in or re-exported by `$lib/api.ts`.

@@ -1,4 +1,5 @@
 import type { CreateTicketInput, TicketLocation } from './types/ticket-location';
+import { clearTicketPhotos, getTicketPhotos, saveTicketPhotos } from './ticket-photos.ts';
 export type { CreateTicketInput, TicketLocation } from './types/ticket-location';
 
 export interface TicketComment {
@@ -176,6 +177,8 @@ async function apiFetch<T>(
 }
 
 export const CampusFixAPI = {
+	getTicketPhotos,
+	saveTicketPhotos,
 	async getTickets(): Promise<Ticket[]> {
 		const tickets = await apiFetch<ServerTicket[]>(TICKETS_ROUTE);
 		if (!Array.isArray(tickets)) throw new Error('Invalid ticket response');
@@ -243,6 +246,8 @@ export const CampusFixAPI = {
 	async deleteTicket(id: string): Promise<void> {
 		await apiFetch<void>(buildRoute(TICKET_BY_ID_ROUTE, { id }), { method: 'DELETE' });
 		removePin(id);
+		// Local cleanup must not report a successful server deletion as failed.
+		await clearTicketPhotos(id).catch(() => {});
 	},
 	getComments(ticketId: string): Promise<TicketComment[] | null> {
 		return apiFetch(buildRoute(TICKET_COMMENTS_ROUTE, { ticketId }), {}, true);
@@ -280,6 +285,7 @@ export const CampusFixAPI = {
 	},
 	async resetMockData(): Promise<{ message: string }> {
 		const result = await apiFetch<{ message: string }>(TICKET_RESET_ROUTE, { method: 'POST' });
+		await clearTicketPhotos().catch(() => {});
 		try {
 			localStorage.removeItem(PIN_KEY);
 		} catch {
