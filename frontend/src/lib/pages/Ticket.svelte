@@ -6,6 +6,7 @@
 	import { STATUS_COLOR } from '../shared.js';
 	import Topbar from '../components/Topbar.svelte';
 	import Icon from '../components/Icon.svelte';
+	import TicketPhotos from '../components/TicketPhotos.svelte';
 	let {
 		id,
 		justSubmitted = false,
@@ -193,6 +194,7 @@
 		>
 			{ticket.description || 'No description provided.'}
 		</div>
+		<TicketPhotos {ticket} />
 		{#if ticket.status === 'Open'}
 			<button class="btn-secondary" style="margin-bottom:8px;" onclick={edit} disabled={busy}
 				>Edit report</button

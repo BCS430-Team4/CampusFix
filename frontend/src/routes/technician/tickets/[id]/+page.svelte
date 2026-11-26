@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
 	import { page } from '$app/state';
+	import TicketPhotos from '$lib/components/TicketPhotos.svelte';
 	import { resolve } from '$app/paths';
 	import {
 		CampusFixAPI,
@@ -273,6 +274,7 @@
 				<p class="description secondary-text">
 					{ticket.description || 'No description provided.'}
 				</p>
+				<TicketPhotos {ticket} />
 
 				{#if ticket.completionNotes}
 					<h3 class="section-title">Completion notes</h3>

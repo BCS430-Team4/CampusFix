@@ -1,6 +1,7 @@
 <script lang="ts">
   let { name, size = 22 }: { name: string; size?: number } = $props();
   const paths: Record<string, string[]> = {
+    expand: ['M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7'],
     monitor: ['M4 3h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z', 'M12 16v5M8 21h8'],
     bolt: ['m13 2-9 12h7l-1 8 10-13h-7l1-7Z'],
     droplet: ['M12 3c-2 3-7 7-7 11a7 7 0 0 0 14 0c0-4-5-8-7-11Z', 'M8 14a4 4 0 0 0 4 4'],
